@@ -1,0 +1,92 @@
+---
+title: "literature_coordinates_20062022"
+author: "Carla"
+date: '2022-06-20'
+output: html_document
+---
+
+# Knitting 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Packages 
+
+```{r message=TRUE, warning=FALSE, paged.print = FALSE}
+library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
+library("sf") # load sf package used for spatial data
+library ("mapview") # package to create maps
+library ("raster")
+theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
+```
+
+# Working directories 
+``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+
+setwd(here::here())
+
+plots <- file.path(here::here("plots"))
+
+data.output <- file.path(here::here("output"))
+
+data.input <- file.path(here::here("data-raw","r-raw"))
+
+```
+
+
+# Getting the data 
+
+``` {r data input}
+coordinate_data <- read.csv2(paste0(data.input,"/map_data_coordinates_correct.csv"), header=TRUE, sep=";", dec = ".")
+
+``` 
+
+# Looking at the data
+
+``` {r data visualisation}
+summary(coordinate_data)
+str(coordinate_data)
+head(coordinate_data)
+```
+
+# Turn the coordinates into numerical values
+``` {r create numerical values}
+coordinate_data <- coordinate_data %>% 
+  mutate(study_area_x_coord = as.numeric(study_area_x_coord)) %>%
+  mutate(study_area_y_coord = as.numeric(study_area_y_coord)) 
+
+sf_pts <- (st_as_sf( #<<
+  coordinate_data, coords = c("study_area_x_coord", "study_area_y_coord"), crs=4326, remove=FALSE))  #<<
+
+```
+
+# Plot the data 
+
+```{r message = FALSE, warning = FALSE, paged.print = FALSE, fig.align = 'center', fig.dim = c(15, 7), dpi = 300}
+plot(sf_pts)
+
+install.packages("mapview")
+library(mapview)
+mapview(sf_pts)
+```
+
+# Load the raster map
+
+``` {r load raster}
+map_raster <- raster(paste0(here::here("data-raw","geo-raw"),"/HFP2009.tif"))
+
+str(map_raster)
+plot(map_raster)
+```                     
+# Extracting values from raster
+
+``` {r Extracting values from raster}
+sf_pts_new_projection <- sf_pts %>%
+  st_transform(crs = crs(map_raster))
+
+extracted_values <- raster::extract(map_raster, sf_pts_new_projection)
+
+extracted_values # There are NAs in the dataset 
+```
+
