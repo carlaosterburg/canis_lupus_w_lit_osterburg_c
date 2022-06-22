@@ -1,0 +1,47 @@
+study_ID;Authors;Year;Title;Journal;Country;Age class;Months old;CalculatedAgeClass;Mortality or Survival;Social class;Rate;Rate;calculated_rate;SE or CI (95%);Method;Notes
+12;Boyd & Pletscher;1999;Characteristics of Dispersal in a Colonizing Wolf Population in the central Rocky Mountains;Journal of Wildlife Management;USACanada;All;NA;All;S;Disperser;0.76 +- 0.10;0,76; 0.76 ;;;
+12;Boyd & Pletscher;1999;Characteristics of Dispersal in a Colonizing Wolf Population in the central Rocky Mountains;Journal of Wildlife Management;USACanada;All;NA;All;S;Territorial;0.77+-0.14;0,77; 0.77 ;;;
+1;Blanco & Cortés;2007;Dispersal patterns, social structure and mortality of wolves living in agricultural habitats in Spain;Journal of Zoology;Spain;NA;NA;All;M;A;0.18 (0.0059-0.285) 95%CI;0,18; 0.82 ;CI;Heisey & Fuller 1985;
+1;Blanco & Cortés;2007;Dispersal patterns, social structure and mortality of wolves living in agricultural habitats in Spain;Journal of Zoology;Spain;NA;NA;All;M;Disperser;0.31 (0.000-0.591);0,31; 0.69 ;CI;Heisey & Fuller 1985;
+1;Blanco & Cortés;2007;Dispersal patterns, social structure and mortality of wolves living in agricultural habitats in Spain;Journal of Zoology;Spain;NA;NA;All;M;P;0.14 (0.003-0.250);0,14; 0.86 ;CI;Heisey & Fuller 1985;
+1;Blanco & Cortés;2007;Dispersal patterns, social structure and mortality of wolves living in agricultural habitats in Spain;Journal of Zoology;Spain;NA;NA;All;M;PAIR;0 (0.000-0.000);0; 1.00 ;CI;Heisey & Fuller 1985;
+1;Blanco & Cortés;2007;Dispersal patterns, social structure and mortality of wolves living in agricultural habitats in Spain;Journal of Zoology;Spain;NA;NA;All;M;PER;0.50 (0.000-0.805);0,5; 0.50 ;CI;Heisey & Fuller 1985;
+13;Hayes & Harestad;2000;Demography of a recovering wolf population in Yukon;Canadian Journal of Zoology;Canada;Pups;< 12 months;Pups;S;NA;0.63 (0.34-0.89);0,63; 0.63 ;CI;Kaplan-Meier;
+13;Hayes & Harestad;2000;Demography of a recovering wolf population in Yukon;Canadian Journal of Zoology;Canada;Yearlings;12 -24 months;Yearlings;S;NA;0.81 (0.69-0.92);0,81; 0.81 ;CI;Kaplan-Meier;
+13;Hayes & Harestad;2000;Demography of a recovering wolf population in Yukon;Canadian Journal of Zoology;Canada;Two-year-olds;24-36 months;Adults;S;NA;0.82 (0.72-0.92);0,82; 0.82 ;CI;Kaplan-Meier;
+13;Hayes & Harestad;2000;Demography of a recovering wolf population in Yukon;Canadian Journal of Zoology;Canada;Three-year-olds;36-48 months;Adults;S;NA;0.97 (0.92-1.00);0,97; 0.97 ;CI;Kaplan-Meier;
+13;Hayes & Harestad;2000;Demography of a recovering wolf population in Yukon;Canadian Journal of Zoology;Canada;Four-year-olds;48 - 60 months;Adults;S;NA;0.88 (0.77.0.98);0,88; 0.88 ;CI;Kaplan-Meier;
+13;Hayes & Harestad;2000;Demography of a recovering wolf population in Yukon;Canadian Journal of Zoology;Canada;Five-year-olds;>=60;Adults;S;NA;0.88 (0.80-0.97);0,88; 0.88 ;CI;Kaplan-Meier;
+16;Smith et al.;2010;Survival of Colonizing Wolves in the Northern Rocky Mountains of the United States, 1982-2004;The Journal of Wildlife Management;USA;All;NA;All;S;NA;0.750 (0.728-0.772);0,75; 0.75 ;CI;;All recovery areas
+16;Smith et al.;2010;Survival of Colonizing Wolves in the Northern Rocky Mountains of the United States, 1982-2004;The Journal of Wildlife Management;USA;Pups;< 12 months;Pups;S;NA;0.398 (0.273-0.579);0,398; 0.40 ;CI;;NWMT
+16;Smith et al.;2010;Survival of Colonizing Wolves in the Northern Rocky Mountains of the United States, 1982-2004;The Journal of Wildlife Management;USA;Pups;< 12 months;Pups;S;NA;0.756 (0.635-0.899);0,756; 0.76 ;CI;;GYA
+16;Smith et al.;2010;Survival of Colonizing Wolves in the Northern Rocky Mountains of the United States, 1982-2004;The Journal of Wildlife Management;USA;Pups;< 12 months;Pups;S;NA;0.889 (0.777-1.00);0,889; 0.89 ;CI;;CID
+16;Smith et al.;2010;Survival of Colonizing Wolves in the Northern Rocky Mountains of the United States, 1982-2004;The Journal of Wildlife Management;USA;Non-pups;> 12 months;Adults;S;NA;0.680 (0.643-0.740);0,68; 0.68 ;CI;;"NWMT; Non-pups= yearlings and adults"
+16;Smith et al.;2010;Survival of Colonizing Wolves in the Northern Rocky Mountains of the United States, 1982-2004;The Journal of Wildlife Management;USA;Non-pups;> 12 months;Adults;S;NA;0.771 (0.737-0.806);0,771; 0.77 ;CI;;"GYA; Non-pups= yearlings and adults"
+16;Smith et al.;2010;Survival of Colonizing Wolves in the Northern Rocky Mountains of the United States, 1982-2004;The Journal of Wildlife Management;USA;Non-pups;> 12 months;Adults;S;NA;0.789 (0.750-0.829);0,789; 0.79 ;CI;;"CID; Non-pups= yearlings and adults"
+17;Peterson et al.;1984;WOLVES OF THE KENAI PENINSULA, ALASKA;Wildlife Monographs;USA;All;NA;All;S;ALL;0.67;0,67; 0.67 ;;;
+17;Peterson et al.;1984;WOLVES OF THE KENAI PENINSULA, ALASKA;Wildlife Monographs;USA;Pups;5 months - unknown;Pups;S;NA;0.88;0,88; 0.88 ;;;
+17;Peterson et al.;1984;WOLVES OF THE KENAI PENINSULA, ALASKA;Wildlife Monographs;USA;Adults;> 5 months;Adults;S;Territorial;0.73;0,73; 0.73 ;;;
+17;Peterson et al.;1984;WOLVES OF THE KENAI PENINSULA, ALASKA;Wildlife Monographs;USA;Adults;> 5 months;Adults;S;Disperser;0.38;0,38; 0.38 ;;;
+18;Ballard et al.;1987;ECOLOGY OF AN EXPLOITED WOLF POPULATION IN SOUTH-CENTRAL ALASKA;Wildlife Monographs;USA;Pups;0-12;Pups;S;NA;0.354 (0.13-0.60);0,354; 0.35 ;range;Rates for entire year were computed by multiplying the first survival rates from May-October from Table 4;
+18;Ballard et al.;1987;ECOLOGY OF AN EXPLOITED WOLF POPULATION IN SOUTH-CENTRAL ALASKA;Wildlife Monographs;USA;Yearlings;déc-24;Yearlings;S;NA;0.681 (0.26-1.00);0,681; 0.68 ;;;
+18;Ballard et al.;1987;ECOLOGY OF AN EXPLOITED WOLF POPULATION IN SOUTH-CENTRAL ALASKA;Wildlife Monographs;USA;Adults;24+;Adults;S;NA;0.591 (0.45-0.77);0,591; 0.59 ;;;
+18;Ballard et al.;1987;ECOLOGY OF AN EXPLOITED WOLF POPULATION IN SOUTH-CENTRAL ALASKA;Wildlife Monographs;USA;All;All;All;S;NA;0.551;0,551; 0.55 ;;;
+30;Reinhardt et al.;2019;Military training areas facilitate the recolonization of wolves in Germany;Conservation Letters;Germany;All;All;All;M;NA;0.16;0,16; 0.84 ;;;Mortality total in military training areas (MTA), territory years: 103
+30;Reinhardt et al.;2019;Military training areas facilitate the recolonization of wolves in Germany;Conservation Letters;Germany;All;All;All;M;NA;0.13;0,13; 0.87 ;;;MTA: traffic, territory years: 103
+30;Reinhardt et al.;2019;Military training areas facilitate the recolonization of wolves in Germany;Conservation Letters;Germany;All;All;All;M;NA;0;0; 1.00 ;;;MTA:poaching, territory years: 103
+30;Reinhardt et al.;2019;Military training areas facilitate the recolonization of wolves in Germany;Conservation Letters;Germany;All;All;All;M;NA;0.36;0,36; 0.64 ;;;Mortality total in protected areas (PAs), territory years: 42
+30;Reinhardt et al.;2019;Military training areas facilitate the recolonization of wolves in Germany;Conservation Letters;Germany;All;All;All;M;NA;0.12;0,12; 0.88 ;;;PAs: traffic, territory years: 42
+30;Reinhardt et al.;2019;Military training areas facilitate the recolonization of wolves in Germany;Conservation Letters;Germany;All;All;All;M;NA;0.14;0,14; 0.86 ;;;PAs: poaching, territory years: 42
+30;Reinhardt et al.;2019;Military training areas facilitate the recolonization of wolves in Germany;Conservation Letters;Germany;All;All;All;M;NA;0.42;0,42; 0.58 ;;;Other areas: total, territory years: 142
+30;Reinhardt et al.;2019;Military training areas facilitate the recolonization of wolves in Germany;Conservation Letters;Germany;All;All;All;M;NA;0.31;0,31; 0.69 ;;;Other areas: traffic, territory years: 142
+30;Reinhardt et al.;2019;Military training areas facilitate the recolonization of wolves in Germany;Conservation Letters;Germany;All;All;All;M;NA;0.04;0,04; 0.96 ;;;Other areas: poaching, territory years: 142
+11;Fuller;1989;Population Dynamics of Wolves in North-Central Minnesota;Wildlife Monographs;USA;Pups;< 12 months;Pups;S;NA;0.37;0,37; 0.37 ;;;Annual survival rate (0.37x0.77) multiplied both halves of the year
+11;Fuller;1989;Population Dynamics of Wolves in North-Central Minnesota;Wildlife Monographs;USA;Pups;< 5 months;Pups;S;NA;0.48;0,48; 0.48 ;;;Survival rate from birth (mid-April) to mid-November, estimated from mean numbers of pups per pack at both times, so mid-April (6.6) and mid-November (3.2)
+11;Fuller;1989;Population Dynamics of Wolves in North-Central Minnesota;Wildlife Monographs;USA;Yearlings;12 months;Yearlings;S;Resident;0.67;0,67; 0.67 ;;;
+11;Fuller;1989;Population Dynamics of Wolves in North-Central Minnesota;Wildlife Monographs;USA;Adults;24 months;Adults;S;Resident;0.67;0,67; 0.67 ;;;
+11;Fuller;1989;Population Dynamics of Wolves in North-Central Minnesota;Wildlife Monographs;USA;Adults;> 5 months;Adults;S;Non-resident;0.52;0,52; 0.52 ;;;
+11;Fuller;1989;Population Dynamics of Wolves in North-Central Minnesota;Wildlife Monographs;USA;NA;NA;All;S;All radiocollared wolves;0.64 (0.57-0.71);0,64; 0.64 ;range;;No difference found between years (P>0.25)
+11;Fuller;1989;Population Dynamics of Wolves in North-Central Minnesota;Wildlife Monographs;USA;Pups;5 - 12 months;Pups;S;Resident;0.77;0,77; 0.77 ;;;
+11;Fuller;1989;Population Dynamics of Wolves in North-Central Minnesota;Wildlife Monographs;USA;Yearlings;12 months;Yearlings;S;Resident;0.77;0,77; 0.77 ;;;mid-November to March
+11;Fuller;1989;Population Dynamics of Wolves in North-Central Minnesota;Wildlife Monographs;USA;Adults;24 months;Adults;S;Resident;0.77;0,77; 0.77 ;;;mid-November to March

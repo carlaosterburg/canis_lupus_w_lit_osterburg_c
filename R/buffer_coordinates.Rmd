@@ -1,0 +1,113 @@
+---
+title: "coordinate_buffer"
+author: "Carla"
+date: '2022-06-21'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Packages 
+
+```{r message=TRUE, warning=FALSE, paged.print = FALSE}
+rm(list=ls())
+library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
+library("sf") # load sf package used for spatial data
+library ("mapview") # package to create maps
+library ("raster") # package to work with rasters
+theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
+```
+
+# Working directories 
+``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+
+setwd(here::here())
+
+plots <- file.path(here::here("plots")) # species where to save plots
+
+data.output <- file.path(here::here("output")) # specifies where to save outputs
+
+data.input <- file.path(here::here("data-raw","r-raw")) 
+
+```
+
+# Getting the data 
+
+``` {r data input}
+study_area_size_data <- read.csv2(paste0(data.input,"/coordinates_study_area_size_21062022.csv"), header=TRUE, sep=";", dec = ".")
+
+``` 
+
+# View data
+
+``` {r visualise data}
+summary(study_area_size_data)
+str(study_area_size_data)
+
+```
+
+# Transform data
+
+``` {r transform into multipoint data}
+
+study_area_size_data_no_nas <- study_area_size_data %>% 
+  na.omit() %>%
+ dplyr:: select(longitude, latitude)
+
+buffer_size <- study_area_size_data %>%
+  na.omit() %>%
+  mutate(radius=sqrt(study_area_size/2*pi)) %>%
+  dplyr::select(radius)
+
+coords <- st_as_sf(study_area_size_data_no_nas, coords=c("longitude","latitude"), crs=4326) 
+
+```
+
+# Create buffer
+
+``` {r create buffer}
+
+buffer <- st_buffer(coords, buffer_size$radius)
+
+buffer %>%
+  ggplot() +
+  geom_sf(lwd=0.1)
+
+```
+# Load the raster map
+
+``` {r load raster}
+map_raster <- raster(paste0(here::here("data-raw","geo-raw"),"/HFP2009.tif"))
+
+str(map_raster)
+# plot(map_raster)
+```                
+
+# Extracting values from raster
+
+``` {r Extracting values from raster}
+buffer_new_projection <- buffer %>%
+  st_transform(crs = crs(map_raster))
+
+extracted_values_mean_hfp <- raster::extract(map_raster, buffer_new_projection,fun=mean, na.rm=TRUE)
+
+extracted_values_mean_hfp 
+
+saveRDS(extracted_values_mean_hfp,paste0(data.output,"/data-proc/extracted_values_mean_hfp",Sys.Date(),".rds"))
+```
+
+# Plot buffers with human footprint
+
+``` {r plot buffers}
+combined_buffer_hfp <- cbind(buffer_new_projection,extracted_values_mean_hfp)
+mapview(combined_buffer_hfp, zcol="extracted_values_mean_hfp")
+
+dataframe_combined_buffer_hfp <- study_area_size_data %>%
+  na.omit() %>%
+  cbind(combined_buffer_hfp)
+
+saveRDS(dataframe_combined_buffer_hfp,paste0(data.output,"/data-proc/dataframe_combined_buffer_hfp",Sys.Date(),".rds"))
+```
