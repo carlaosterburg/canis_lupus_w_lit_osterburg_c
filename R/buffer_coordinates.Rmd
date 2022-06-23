@@ -59,10 +59,13 @@ study_area_size_data_no_nas <- study_area_size_data %>%
 
 buffer_size <- study_area_size_data %>%
   na.omit() %>%
-  mutate(radius=sqrt(study_area_size/2*pi)) %>%
+  mutate(radius=(sqrt(study_area_size/2*pi))*1000) %>%
   dplyr::select(radius)
 
-coords <- st_as_sf(study_area_size_data_no_nas, coords=c("longitude","latitude"), crs=4326) 
+coords <- st_as_sf(study_area_size_data_no_nas, coords=c("longitude","latitude"), crs=4326) %>%
+  st_transform(CRS("+proj=robin"))
+
+mapview(coords)
 
 ```
 
