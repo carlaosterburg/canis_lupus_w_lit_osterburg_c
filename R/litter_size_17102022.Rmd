@@ -1,0 +1,69 @@
+---
+title: "litter_size_17102022"
+author: "Carla"
+date: "2022-10-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+
+```{r message=TRUE, warning=FALSE, paged.print = FALSE}
+rm(list=ls())
+library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
+library("sf") # load sf package used for spatial data
+library ("mapview") # package to create maps
+library ("raster") # package to work with rasters
+library("lme4") # package for linear regression
+theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
+```
+
+# Working directories 
+``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+
+setwd(here::here())
+
+plots <- file.path(here::here("plots")) # species where to save plots
+
+data.output <- file.path(here::here("output")) # specifies where to save outputs
+
+data.input <- file.path(here::here("data-raw","r-raw")) 
+
+```
+
+# Load the data
+
+``` {r in the data}
+
+no_cubs_data <- read.csv2(paste0(data.input,"/no_cubs_17102022.csv"), header=TRUE, sep=";", dec = ".")
+
+human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_hfp2022-10-14.rds"))
+```
+
+# Create a new table
+
+``` {r pack size hfp}
+no_cubs_hfp_ID <- no_cubs_data %>%
+  left_join(human_footprint,by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,HFP2009,country) %>%
+  rename(ID=study_ID,hfp=HFP2009) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(hfp_standard=scale(hfp))
+```
+
+# Linear regression
+
+``` {r linear regression}
+lm1 <- lm(no_cubs~hfp_standard+country,data=no_cubs_hfp_ID)
+
+plot(lm1)
+
+summary(lm1)
+
+lm2 <- lmer(no_cubs~(1|ID)+hfp_standard,data=no_cubs_hfp_ID) 
+
+summary(lm2)
+```
