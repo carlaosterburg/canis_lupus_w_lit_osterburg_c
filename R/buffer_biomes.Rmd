@@ -1,14 +1,13 @@
 ---
-title: "coordinate_buffer"
+title: "buffer_coords_biomes"
 author: "Carla"
-date: '2022-06-21'
+date: "2022-10-20"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
 
 # Packages 
 
@@ -17,7 +16,7 @@ rm(list=ls())
 library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
 library("sf") # load sf package used for spatial data
 library ("mapview") # package to create maps
-library ("raster") # package to work with rasters
+#library ("raster") # package to work with rasters
 library("rlist") #to work with lists
 library("terra")
 
@@ -36,6 +35,7 @@ data.output <- file.path(here::here("output")) # specifies where to save outputs
 data.input <- file.path(here::here("data-raw","r-raw")) 
 
 ```
+
 
 # Getting the data 
 
@@ -72,7 +72,7 @@ coords <- st_as_sf(study_area_size_data_no_nas, coords=c("longitude","latitude")
 
 ```
 
-#Help functions 
+# Help functions 
 ```{r functions to help }
 #function to transform the latitude longitute projection of each poitns into the right UTM
 lonlat2UTM = function(lonlat) {
@@ -147,7 +147,7 @@ mapview(combined)
 # Load the raster map
 
 ``` {r load raster}
-map_raster <- terra::rast(paste0(here::here("data-raw","geo-raw"),"/HFP2009.tif"))
+map_raster <- terra::rast(paste0(here::here("data-raw","geo-raw"),"/biomes_wgs.tif"))
 
 str(map_raster)
 plot(map_raster)
@@ -159,22 +159,22 @@ plot(map_raster)
 buffer_new_projection <- combined %>%
   st_transform(crs = crs(map_raster))
 
-extracted_values_mean_hfp <- raster::extract(map_raster, buffer_new_projection,fun=mean, na.rm=TRUE)
+extracted_values_mean_biomes <- raster::extract(map_raster, buffer_new_projection,fun=mean, na.rm=TRUE)
 
-extracted_values_mean_hfp 
+extracted_values_mean_biomes 
 
-saveRDS(extracted_values_mean_hfp,paste0(data.output,"/data-proc/extracted_values_mean_hfp",Sys.Date(),".rds"))
+saveRDS(extracted_values_mean_biomes,paste0(data.output,"/data-proc/extracted_values_mean_biomes",Sys.Date(),".rds"))
 ```
 
-# Plot buffers with human footprint
+# Plot buffers with biomes
 
 ``` {r plot buffers}
-combined_buffer_hfp <- cbind(buffer_new_projection,extracted_values_mean_hfp)
-mapview(combined_buffer_hfp, zcol="HFP2009")
+combined_buffer_biomes <- cbind(buffer_new_projection,extracted_values_mean_biomes)
+mapview(combined_buffer_biomes, zcol="biomes_wgs")
 
-dataframe_combined_buffer_hfp <- study_area_size_data %>%
+dataframe_combined_buffer_biomes <- study_area_size_data %>%
   na.omit() %>%
-  cbind(combined_buffer_hfp)
+  cbind(combined_buffer_biomes)
 
-saveRDS(dataframe_combined_buffer_hfp,paste0(data.output,"/data-proc/dataframe_combined_buffer_hfp",Sys.Date(),".rds"))
+saveRDS(dataframe_combined_buffer_biomes,paste0(data.output,"/data-proc/dataframe_combined_buffer_biomes",Sys.Date(),".rds"))
 ```
