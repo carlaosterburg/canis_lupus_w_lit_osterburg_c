@@ -16,7 +16,7 @@ rm(list=ls())
 library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
 library("sf") # load sf package used for spatial data
 library ("mapview") # package to create maps
-library ("raster") # package to work with rasters
+#library ("raster") # package to work with rasters
 library("rlist") #to work with lists
 library("terra")
 
@@ -54,7 +54,7 @@ str(study_area_size_data)
 # Transform data
 
 ``` {r transform into multipoint data}
-#extr cting the study area size and taking out the nas 
+#extracting the study area size and taking out the nas 
 study_area_size_data_no_nas <- study_area_size_data %>% 
   na.omit() %>%
  dplyr:: select(longitude, latitude) %>%
@@ -149,6 +149,8 @@ mapview(combined)
 map_raster <- terra::rast(paste0(here::here("data-raw","geo-raw"),"/ecoregions_wgs.tif"))
 
 str(map_raster)
+crs(map_raster)
+
 plot(map_raster)
 ```                
 
@@ -165,7 +167,7 @@ extracted_values_mean_eco
 saveRDS(extracted_values_mean_eco,paste0(data.output,"/data-proc/extracted_values_mean_eco",Sys.Date(),".rds"))
 ```
 
-# Plot buffers with human footprint
+# Plot buffers with ecoregions
 
 ``` {r plot buffers}
 combined_buffer_eco <- cbind(buffer_new_projection,extracted_values_mean_eco)
