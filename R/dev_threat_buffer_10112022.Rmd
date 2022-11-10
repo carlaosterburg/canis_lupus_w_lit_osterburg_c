@@ -1,13 +1,13 @@
 ---
-title: "ecoregions_buffer"
+title: "development_threat"
 author: "Carla"
-date: "2022-10-25"
+date: "2022-11-10"
 output: html_document
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
 
 # Packages 
 
@@ -25,6 +25,7 @@ theme_set(theme_minimal(base_size = 14)) # set ggplot theme
 # Working directories 
 ``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
 getwd()
+
 setwd("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c")
 
 plots <- file.path(here::here("plots")) # species where to save plots
@@ -53,7 +54,7 @@ str(study_area_size_data)
 # Transform data
 
 ``` {r transform into multipoint data}
-#extracting the study area size and taking out the nas 
+#extr cting the study area size and taking out the nas 
 study_area_size_data_no_nas <- study_area_size_data %>% 
   na.omit() %>%
  dplyr:: select(longitude, latitude) %>%
@@ -145,11 +146,10 @@ mapview(combined)
 # Load the raster map
 
 ``` {r load raster}
-map_raster <- terra::rast(paste0(here::here("data-raw","geo-raw"),"/ecoregions_wgs.tif"))
+map_raster <- terra::rast(paste0(here::here("data-raw","geo-raw"),"/dev_threat_prj_maskf.tif"))
 
 str(map_raster)
 crs(map_raster)
-
 plot(map_raster)
 ```                
 
@@ -159,22 +159,22 @@ plot(map_raster)
 buffer_new_projection <- combined %>%
   st_transform(crs = crs(map_raster))
 
-extracted_values_mean_eco <- raster::extract(map_raster, buffer_new_projection,fun=mean, na.rm=TRUE)
+extracted_values_mean_dev_threat <- raster::extract(map_raster, buffer_new_projection,fun=mean, na.rm=TRUE)
 
-extracted_values_mean_eco 
+extracted_values_mean_dev_threat
 
-saveRDS(extracted_values_mean_eco,paste0(data.output,"/data-proc/extracted_values_mean_eco",Sys.Date(),".rds"))
+saveRDS(extracted_values_mean_dev_threat,paste0(data.output,"/data-proc/extracted_values_mean_dev_threat",Sys.Date(),".rds"))
 ```
 
-# Plot buffers with ecoregions
+# Plot buffers with countries
 
 ``` {r plot buffers}
-combined_buffer_eco <- cbind(buffer_new_projection,extracted_values_mean_eco)
-mapview(combined_buffer_eco, zcol="ecoregions_wgs")
+combined_buffer_dev_threat <- cbind(buffer_new_projection,extracted_values_mean_dev_threat)
+mapview(combined_buffer_dev_threat, zcol="dev_threat_prj_maskf")
 
-dataframe_combined_buffer_eco <- study_area_size_data %>%
+dataframe_combined_buffer_dev_threat <- study_area_size_data %>%
   na.omit() %>%
-  cbind(combined_buffer_eco)
+  cbind(combined_buffer_dev_threat)
 
-saveRDS(dataframe_combined_buffer_eco,paste0(data.output,"/data-proc/dataframe_combined_buffer_eco",Sys.Date(),".rds"))
+saveRDS(dataframe_combined_buffer_dev_threat,paste0(data.output,"/data-proc/dataframe_combined_buffer_dev_threat",Sys.Date(),".rds"))
 ```

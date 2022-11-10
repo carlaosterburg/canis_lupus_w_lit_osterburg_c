@@ -22,6 +22,7 @@ theme_set(theme_minimal(base_size = 14)) # set ggplot theme
 
 # Working directories 
 ``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+setwd("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c")
 
 setwd(here::here())
 
@@ -65,8 +66,5 @@ print(lm1)
 
 summary(lm1)
 
-lm2 <- lmer(no_cubs~(1|ID)+ecoreg_standard,data=ls_eco_ID)
-
-summary(lm2)
 ```
 

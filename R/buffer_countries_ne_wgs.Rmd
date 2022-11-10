@@ -16,7 +16,6 @@ rm(list=ls())
 library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
 library("sf") # load sf package used for spatial data
 library ("mapview") # package to create maps
-library ("raster") # package to work with rasters
 library("rlist") #to work with lists
 library("terra")
 
@@ -25,8 +24,9 @@ theme_set(theme_minimal(base_size = 14)) # set ggplot theme
 
 # Working directories 
 ``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+getwd()
 
-setwd(here::here())
+setwd("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c")
 
 plots <- file.path(here::here("plots")) # species where to save plots
 
@@ -149,6 +149,7 @@ mapview(combined)
 map_raster <- terra::rast(paste0(here::here("data-raw","geo-raw"),"/countries_ne_wgs.tif"))
 
 str(map_raster)
+crs(map_raster)
 plot(map_raster)
 ```                
 
@@ -165,7 +166,7 @@ extracted_values_mean_countries
 saveRDS(extracted_values_mean_countries,paste0(data.output,"/data-proc/extracted_values_mean_countries",Sys.Date(),".rds"))
 ```
 
-# Plot buffers with human footprint
+# Plot buffers with countries
 
 ``` {r plot buffers}
 combined_buffer_countries <- cbind(buffer_new_projection,extracted_values_mean_countries)
