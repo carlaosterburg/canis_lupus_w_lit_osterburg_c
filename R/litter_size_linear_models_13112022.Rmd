@@ -1,0 +1,198 @@
+---
+title: "litter_size_linear_models_13112022"
+author: "Carla"
+date: "2022-11-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+
+```{r message=TRUE, warning=FALSE, paged.print = FALSE}
+rm(list=ls())
+library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
+library("sf") # load sf package used for spatial data
+library ("mapview") # package to create maps
+library ("terra") # package to work with rasters
+library("lme4") # package for linear regression
+theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
+```
+
+# Working directories 
+``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+
+setwd(here::here())
+
+plots <- file.path(here::here("plots")) # species where to save plots
+
+data.output <- file.path(here::here("output")) # specifies where to save outputs
+
+data.input <- file.path(here::here("data-raw","r-raw")) 
+
+```
+
+# Load the data
+
+``` {r in the data}
+
+litter_sizes <- read.csv2(paste0(data.input,"/no_cubs_17102022.csv"), header=TRUE, sep=";", dec = ".")
+
+forest_loss <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_forloss2022-11-11.rds"))
+
+ecoregions <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_eco2022-11-10.rds"))
+
+devthreats <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_dev_threat2022-11-10.rds"))
+
+protected_areas <-readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_wdpa2022-11-10.rds"))
+
+accessibility <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_access2022-11-10.rds"))
+
+biomes <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_biomes2022-11-13.rds"))
+
+human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_hfp2022-11-11.rds"))
+
+```
+
+# Create a new table
+
+``` {r mortality forest loss}
+
+# forest loss
+forloss_ls_ID <- litter_sizes %>%
+  left_join(forest_loss,by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,forloss_drivers_prj) %>%
+  rename(ID=study_ID,forloss=forloss_drivers_prj) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(forloss_standard=scale(forloss))
+
+# ecoregions
+eco_ls_ID <- litter_sizes %>%
+  left_join(ecoregions, by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,ecoregions_wgs) %>%
+  rename(ID=study_ID,eco=ecoregions_wgs) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(eco_standard=scale(eco))
+
+# development threats
+
+devthreat_ls_ID <- litter_sizes %>%
+  left_join(devthreats, by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,dev_threat_prj_maskf) %>%
+  rename(ID=study_ID, devt=dev_threat_prj_maskf) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(devt_standard=scale(devt))
+
+# protected areas 
+
+wdpa_ls_ID <- litter_sizes %>%
+  left_join(protected_areas, by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,wdpa_bin_prj) %>%
+  rename(ID=study_ID,wdpa=wdpa_bin_prj) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(wdpa_standard=scale(wdpa))
+
+# accessibility 
+
+access_ls_ID <- litter_sizes %>%
+  left_join(accessibility, by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,accessibility) %>%
+  rename(ID=study_ID,access=accessibility) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(access_standard=scale(access))
+
+# biomes
+
+bio_ls_ID <- litter_sizes %>%
+  left_join(biomes, by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,biomes_wgs) %>%
+  rename(ID=study_ID,bio=biomes_wgs) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(bio_standard=scale(bio))
+
+# human footprint
+hfp_ls_ID <- litter_sizes %>%
+  left_join(human_footprint, by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,HFP2009) %>%
+  rename(ID=study_ID,hfp=HFP2009) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(hfp_standard=scale(hfp))
+
+```
+# Linear regression
+
+``` {r linear regression}
+# forest loss
+lmforloss<- lm(no_cubs~forloss_standard,data=forloss_ls_ID)
+
+plot(lmforloss)
+
+print(lmforloss)
+
+summary(lmforloss)
+
+
+# ecoregions
+lmeco<- lm(no_cubs~eco_standard,data=eco_ls_ID)
+
+plot(lmeco)
+
+print(lmeco)
+
+summary(lmeco)
+
+
+# development threats
+lmdevt<- lm(no_cubs~devt_standard,data=devthreat_ls_ID)
+
+plot(lmdevt)
+
+print(lmdevt)
+
+summary(lmdevt)
+
+# protected areas
+lmpas<- lm(no_cubs~wdpa_standard,data=wdpa_ls_ID)
+
+plot(lmpas)
+
+print(lmpas)
+
+summary(lmpas)
+
+# accessibility
+
+lmacc<- lm(no_cubs~access_standard,data=access_ls_ID)
+
+plot(lmacc)
+
+print(lmacc)
+
+summary(lmacc)
+
+
+# biomes
+
+lmbio<- lm(no_cubs~bio_standard,data=bio_ls_ID)
+
+plot(lmbio)
+
+print(lmbio)
+
+summary(lmbio)
+
+# human footprint 
+
+lmhfp<- lm(no_cubs~hfp_standard,data=hfp_ls_ID)
+
+plot(lmhfp)
+
+print(lmhfp)
+
+summary(lmhfp)
+
+
+```
+

@@ -82,7 +82,7 @@ world_map <-base_map +
     size = 1.1, stroke = .3
   ) +
   scale_fill_viridis_c(
-    option = "H", direction = -1, end = .9, name = "Year of Publication", 
+    option = "D", direction = -1, end = .9, name = "Year of Publication", 
     guide = guide_colorsteps(
       barwidth = unit(11, "lines"), barheight = unit(.5, "lines"),
       title.position = "top", order = 1, show.limits = TRUE
