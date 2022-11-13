@@ -17,7 +17,7 @@ rm(list=ls())
 library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
 library("sf") # load sf package used for spatial data
 library ("mapview") # package to create maps
-library ("raster") # package to work with rasters
+# library ("raster") # package to work with rasters
 library("rlist") #to work with lists
 library("terra")
 
@@ -26,6 +26,7 @@ theme_set(theme_minimal(base_size = 14)) # set ggplot theme
 
 # Working directories 
 ``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+setwd("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c")
 
 setwd(here::here())
 
@@ -151,6 +152,8 @@ map_raster <- terra::rast(paste0(here::here("data-raw","geo-raw"),"/HFP2009.tif"
 
 str(map_raster)
 plot(map_raster)
+
+crs(map_raster)
 ```                
 
 # Extracting values from raster

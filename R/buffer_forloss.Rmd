@@ -16,7 +16,6 @@ rm(list=ls())
 library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
 library("sf") # load sf package used for spatial data
 library ("mapview") # package to create maps
-library ("raster") # package to work with rasters
 library("rlist") #to work with lists
 library("terra")
 
@@ -165,7 +164,7 @@ extracted_values_mean_forloss
 saveRDS(extracted_values_mean_forloss,paste0(data.output,"/data-proc/extracted_values_mean_forloss",Sys.Date(),".rds"))
 ```
 
-# Plot buffers with human footprint
+# Plot buffers with forest loss
 
 ``` {r plot buffers}
 combined_buffer_forloss <- cbind(buffer_new_projection,extracted_values_mean_forloss)
