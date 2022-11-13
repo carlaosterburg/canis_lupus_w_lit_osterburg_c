@@ -1,0 +1,199 @@
+---
+title: "lm_mortality"
+author: "Carla"
+date: "2022-11-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+
+```{r message=TRUE, warning=FALSE, paged.print = FALSE}
+rm(list=ls())
+library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
+library("sf") # load sf package used for spatial data
+library ("mapview") # package to create maps
+library ("raster") # package to work with rasters
+library("lme4") # package for linear regression
+theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
+```
+
+# Working directories 
+``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+
+setwd(here::here())
+
+plots <- file.path(here::here("plots")) # species where to save plots
+
+data.output <- file.path(here::here("output")) # specifies where to save outputs
+
+data.input <- file.path(here::here("data-raw","r-raw")) 
+
+```
+
+# Load the data
+
+``` {r in the data}
+
+mortality_data <- read.csv2(paste0(data.input,"/mortality_13112022.csv"), header=TRUE, sep=";", dec = ".")
+
+forest_loss <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_forloss2022-11-11.rds"))
+
+ecoregions <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_eco2022-11-10.rds"))
+
+devthreats <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_dev_threat2022-11-10.rds"))
+
+protected_areas <-readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_wdpa2022-11-10.rds"))
+
+accessibility <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_access2022-11-10.rds"))
+
+biomes <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_biomes2022-11-13.rds"))
+```
+
+# Create a new table
+
+``` {r mortality forest loss}
+
+# forest loss
+mortality_forloss_ID <- mortality_data %>%
+  left_join(forest_loss,by="study_ID") %>%
+  dplyr::select(study_ID,calc_surv_rate,forloss_drivers_prj) %>%
+  rename(ID=study_ID,mortality=calc_surv_rate,forloss=forloss_drivers_prj) %>%
+  mutate(mortality=as.numeric(mortality)) %>%
+  mutate(forloss_standard=scale(forloss))
+
+# ecoregions
+eco_mort_ID <- mortality_data %>%
+  left_join(ecoregions, by="study_ID") %>%
+  dplyr::select(study_ID,calc_surv_rate,ecoregions_wgs) %>%
+  rename(ID=study_ID,mortality=calc_surv_rate, eco=ecoregions_wgs) %>%
+  mutate(mortality=as.numeric(mortality)) %>%
+  mutate(eco_standard=scale(eco))
+
+# development threats
+
+devthreat_mort_ID <- mortality_data %>%
+  left_join(devthreats, by="study_ID") %>%
+  dplyr::select(study_ID,calc_surv_rate,dev_threat_prj_maskf) %>%
+  rename(ID=study_ID,mortality=calc_surv_rate, devt=dev_threat_prj_maskf) %>%
+  mutate(mortality=as.numeric(mortality)) %>%
+  mutate(devt_standard=scale(devt))
+
+# protected areas 
+
+wdpa_mort_ID <- mortality_data %>%
+  left_join(protected_areas, by="study_ID") %>%
+  dplyr::select(study_ID,calc_surv_rate,wdpa_bin_prj) %>%
+  rename(ID=study_ID,mortality=calc_surv_rate, wdpa=wdpa_bin_prj) %>%
+  mutate(mortality=as.numeric(mortality)) %>%
+  mutate(wdpa_standard=scale(wdpa))
+
+# accessibility 
+
+access_mort_ID <- mortality_data %>%
+  left_join(accessibility, by="study_ID") %>%
+  dplyr::select(study_ID,calc_surv_rate,accessibility) %>%
+  rename(ID=study_ID,mortality=calc_surv_rate, access=accessibility) %>%
+  mutate(mortality=as.numeric(mortality)) %>%
+  mutate(access_standard=scale(access))
+
+# biomes
+
+bio_mort_ID <- mortality_data %>%
+  left_join(biomes, by="study_ID") %>%
+  dplyr::select(study_ID,calc_surv_rate,biomes_wgs) %>%
+  rename(ID=study_ID,mortality=calc_surv_rate, bio=biomes_wgs) %>%
+  mutate(mortality=as.numeric(mortality)) %>%
+  mutate(bio_standard=scale(bio))
+
+
+```
+# Linear regression
+
+``` {r linear regression}
+# forest loss
+lmforloss<- lm(mortality~forloss_standard,data=mortality_forloss_ID)
+
+plot(lmforloss)
+
+print(lmforloss)
+
+summary(lmforloss)
+
+lmforloss2 <- lmer(mortality~(1|ID)+forloss_standard,data=mortality_forloss_ID)
+
+summary(lmforloss2)
+
+# ecoregions
+lmeco<- lm(mortality~eco_standard,data=eco_mort_ID)
+
+plot(lmeco)
+
+print(lmeco)
+
+summary(lmeco)
+
+lmeco2 <- lmer(mortality~(1|ID)+eco_standard,data=eco_mort_ID)
+
+summary(lmeco2)
+
+# development threats
+lmdevt<- lm(mortality~devt_standard,data=devthreat_mort_ID)
+
+plot(lmdevt)
+
+print(lmdevt)
+
+summary(lmdevt)
+
+lmdevt2 <- lmer(mortality~(1|ID)+devt_standard,data=devthreat_mort_ID)
+
+summary(lmeco2)
+
+# protected areas
+lmpas<- lm(mortality~wdpa_standard,data=wdpa_mort_ID)
+
+plot(lmpas)
+
+print(lmpas)
+
+summary(lmpas)
+
+lmpas2 <- lmer(mortality~(1|ID)+wdpa_standard,data=wdpa_mort_ID)
+
+summary(lmpas)
+
+# accessibility
+
+lmacc<- lm(mortality~access_standard,data=access_mort_ID)
+
+plot(lmacc)
+
+print(lmacc)
+
+summary(lmacc)
+
+lmacc2 <- lmer(mortality~(1|ID)+access_standard,data=access_mort_ID)
+
+summary(lmacc)
+
+# biomes
+
+lmbio<- lm(mortality~bio_standard,data=bio_mort_ID)
+
+plot(lmbio)
+
+print(lmbio)
+
+summary(lmbio)
+
+lmbio2 <- lmer(mortality~(1|ID)+bio_standard,data=bio_mort_ID)
+
+summary(lmbio2)
+
+
+```
+

@@ -1,9 +1,10 @@
 ---
-title: "mortality_regression"
+title: "mortality_13112022"
 author: "Carla"
-date: '2022-06-21'
+date: "2022-11-13"
 output: html_document
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -38,9 +39,9 @@ data.input <- file.path(here::here("data-raw","r-raw"))
 
 ``` {r in the data}
 
-mortality_data <- read.csv2(paste0(data.input,"/MortalityRatesWolfReview21062022_JL_ID.csv"), header=TRUE, sep=";", dec = ".")
+mortality_data <- read.csv2(paste0(data.input,"/mortality_13112022.csv"), header=TRUE, sep=";", dec = ".")
 
-human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_hfp2022-06-21.rds"))
+human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_hfp2022-11-11.rds"))
 ```
 
 # Create a new table
@@ -48,8 +49,8 @@ human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_bu
 ``` {r mortality hfp}
 mortality_hfp_ID <- mortality_data %>%
   left_join(human_footprint,by="study_ID") %>%
-  dplyr::select(study_ID,calculated_rate,extracted_values_mean_hfp) %>%
-  rename(ID=study_ID,mortality=calculated_rate,hfp=extracted_values_mean_hfp) %>%
+  dplyr::select(study_ID,calc_surv_rate,HFP2009) %>%
+  rename(ID=study_ID,mortality=calc_surv_rate,hfp=HFP2009) %>%
   mutate(mortality=as.numeric(mortality)) %>%
   mutate(hfp_standard=scale(hfp))
 ```
