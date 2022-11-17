@@ -116,7 +116,7 @@ ggplot() +
   geom_sf(data = sf_graticules, color = "white", size = .1) +
   geom_sf(data = sf_counts, aes(fill = country_count), color = "transparent", size = .01) +
   geom_sf(data = sf_borders, color = "grey92", size = .15) +
-  scale_fill_gradientn(colours = viridis(256,option = "G", alpha = 1, direction = -1, begin = 0, end = .9), breaks=seq(3,30, by=3), name="Number of Publications", space = "Lab", na.value = "grey92", guide= guide_colorsteps(barwidth=unit(11,"lines"), barheight = unit(.5,"lines"), title.position ="top", order=1, show.limits = TRUE))
+  scale_fill_gradientn(colours = viridis(256,option = "D", alpha = 1, direction = -1, begin = 0, end = .9), limits=c(1,30),breaks=seq(3,30, by=3), name="Number of Publications", space = "Lab", na.value = "grey92", guide= guide_colorsteps(barwidth=unit(11,"lines"), barheight = unit(.5,"lines"), title.position ="top", order=1, show.limits = TRUE))
 
 ggsave(here::here("plots", "map_country_counts_viridis_d_trans.png"), 
        width = 9, height = 5, dpi = 500)

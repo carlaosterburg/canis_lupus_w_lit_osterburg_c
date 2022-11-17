@@ -63,7 +63,7 @@ human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_bu
 # forest loss
 forloss_ls_ID <- litter_sizes %>%
   left_join(forest_loss,by="study_ID") %>%
-  dplyr::select(study_ID,no_cubs,forloss_drivers_prj) %>%
+  dplyr::select(study_ID,no_cubs,forloss_drivers_prj,country) %>%
   rename(ID=study_ID,forloss=forloss_drivers_prj) %>%
   mutate(no_cubs=as.numeric(no_cubs)) %>%
   mutate(forloss_standard=scale(forloss))
@@ -71,7 +71,7 @@ forloss_ls_ID <- litter_sizes %>%
 # ecoregions
 eco_ls_ID <- litter_sizes %>%
   left_join(ecoregions, by="study_ID") %>%
-  dplyr::select(study_ID,no_cubs,ecoregions_wgs) %>%
+  dplyr::select(study_ID,no_cubs,ecoregions_wgs,country) %>%
   rename(ID=study_ID,eco=ecoregions_wgs) %>%
   mutate(no_cubs=as.numeric(no_cubs)) %>%
   mutate(eco_standard=scale(eco))
@@ -80,7 +80,7 @@ eco_ls_ID <- litter_sizes %>%
 
 devthreat_ls_ID <- litter_sizes %>%
   left_join(devthreats, by="study_ID") %>%
-  dplyr::select(study_ID,no_cubs,dev_threat_prj_maskf) %>%
+  dplyr::select(study_ID,no_cubs,dev_threat_prj_maskf,country) %>%
   rename(ID=study_ID, devt=dev_threat_prj_maskf) %>%
   mutate(no_cubs=as.numeric(no_cubs)) %>%
   mutate(devt_standard=scale(devt))
@@ -89,7 +89,7 @@ devthreat_ls_ID <- litter_sizes %>%
 
 wdpa_ls_ID <- litter_sizes %>%
   left_join(protected_areas, by="study_ID") %>%
-  dplyr::select(study_ID,no_cubs,wdpa_bin_prj) %>%
+  dplyr::select(study_ID,no_cubs,wdpa_bin_prj,country) %>%
   rename(ID=study_ID,wdpa=wdpa_bin_prj) %>%
   mutate(no_cubs=as.numeric(no_cubs)) %>%
   mutate(wdpa_standard=scale(wdpa))
@@ -98,7 +98,7 @@ wdpa_ls_ID <- litter_sizes %>%
 
 access_ls_ID <- litter_sizes %>%
   left_join(accessibility, by="study_ID") %>%
-  dplyr::select(study_ID,no_cubs,accessibility) %>%
+  dplyr::select(study_ID,no_cubs,accessibility,country) %>%
   rename(ID=study_ID,access=accessibility) %>%
   mutate(no_cubs=as.numeric(no_cubs)) %>%
   mutate(access_standard=scale(access))
@@ -107,7 +107,7 @@ access_ls_ID <- litter_sizes %>%
 
 bio_ls_ID <- litter_sizes %>%
   left_join(biomes, by="study_ID") %>%
-  dplyr::select(study_ID,no_cubs,biomes_wgs) %>%
+  dplyr::select(study_ID,no_cubs,biomes_wgs,country) %>%
   rename(ID=study_ID,bio=biomes_wgs) %>%
   mutate(no_cubs=as.numeric(no_cubs)) %>%
   mutate(bio_standard=scale(bio))
@@ -115,7 +115,7 @@ bio_ls_ID <- litter_sizes %>%
 # human footprint
 hfp_ls_ID <- litter_sizes %>%
   left_join(human_footprint, by="study_ID") %>%
-  dplyr::select(study_ID,no_cubs,HFP2009) %>%
+  dplyr::select(study_ID,no_cubs,HFP2009,country) %>%
   rename(ID=study_ID,hfp=HFP2009) %>%
   mutate(no_cubs=as.numeric(no_cubs)) %>%
   mutate(hfp_standard=scale(hfp))
@@ -125,7 +125,8 @@ hfp_ls_ID <- litter_sizes %>%
 
 ``` {r linear regression}
 # forest loss
-lmforloss<- lm(no_cubs~forloss_standard,data=forloss_ls_ID)
+
+lmforloss<- glm(no_cubs~forloss_standard,data=forloss_ls_ID, family="poisson")
 
 plot(lmforloss)
 
@@ -133,9 +134,20 @@ print(lmforloss)
 
 summary(lmforloss)
 
+lmforloss2 <- glmer(no_cubs~(1|country)+forloss_standard,data=forloss_ls_ID, family="poisson")
+
+plot(lmforloss2)
+
+summary(lmforloss2)
+
+fit_quasi <- glm(no_cubs~forloss_standard + factor(country), data=forloss_ls_ID, family="quasipoisson")
+
+summary(fit_quasi)
+
+
 
 # ecoregions
-lmeco<- lm(no_cubs~eco_standard,data=eco_ls_ID)
+lmeco<- glm(no_cubs~eco_standard,data=eco_ls_ID, family="poisson")
 
 plot(lmeco)
 
@@ -145,7 +157,7 @@ summary(lmeco)
 
 
 # development threats
-lmdevt<- lm(no_cubs~devt_standard,data=devthreat_ls_ID)
+lmdevt<- glm(no_cubs~devt_standard,data=devthreat_ls_ID, family="poisson")
 
 plot(lmdevt)
 
@@ -154,7 +166,7 @@ print(lmdevt)
 summary(lmdevt)
 
 # protected areas
-lmpas<- lm(no_cubs~wdpa_standard,data=wdpa_ls_ID)
+lmpas<- glm(no_cubs~wdpa_standard,data=wdpa_ls_ID, family="poisson")
 
 plot(lmpas)
 
@@ -164,7 +176,7 @@ summary(lmpas)
 
 # accessibility
 
-lmacc<- lm(no_cubs~access_standard,data=access_ls_ID)
+lmacc<- glm(no_cubs~access_standard,data=access_ls_ID, family="poisson")
 
 plot(lmacc)
 
@@ -175,7 +187,7 @@ summary(lmacc)
 
 # biomes
 
-lmbio<- lm(no_cubs~bio_standard,data=bio_ls_ID)
+lmbio<- glm(no_cubs~bio_standard,data=bio_ls_ID, family="poisson")
 
 plot(lmbio)
 
@@ -185,7 +197,7 @@ summary(lmbio)
 
 # human footprint 
 
-lmhfp<- lm(no_cubs~hfp_standard,data=hfp_ls_ID)
+lmhfp<- glm(no_cubs~hfp_standard,data=hfp_ls_ID, family="poisson")
 
 plot(lmhfp)
 
@@ -196,3 +208,39 @@ summary(lmhfp)
 
 ```
 
+```` {r linear regression}
+
+# protected areas 
+
+wdpa_ls_ID_country <- litter_sizes %>%
+  left_join(protected_areas, by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,wdpa_bin_prj,country) %>%
+  rename(ID=study_ID,wdpa=wdpa_bin_prj) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(wdpa_standard=scale(wdpa)) %>%
+  mutate(as.factor(country))
+
+glmerwdpa<- glmer(no_cubs~(1|country)+wdpa_standard, data = wdpa_ls_ID_country)
+
+plot(glmerwdpa)
+
+print(glmerwdpa)
+
+summary(glmerwdpa)
+
+wdpaglmm <- lm(no_cubs~country, data=wdpa_ls_ID_country)
+
+plot(wdpaglmm)
+
+print(wdpaglmm)
+
+summary(wdpaglmm)
+
+wdpaglmm2 <- lm(no_cubs~wdpa_standard+country, data=wdpa_ls_ID_country)
+
+plot(wdpaglmm2)
+
+print(wdpaglmm2)
+
+summary(wdpaglmm2)
+````

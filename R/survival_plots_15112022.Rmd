@@ -1,7 +1,7 @@
 ---
-title: "mortality_13112022"
+title: "survival_plots_15112022"
 author: "Carla"
-date: "2022-11-13"
+date: "2022-11-15"
 output: html_document
 ---
 
@@ -41,41 +41,17 @@ data.input <- file.path(here::here("data-raw","r-raw"))
 
 mortality_data <- read.csv2(paste0(data.input,"/mortality_13112022.csv"), header=TRUE, sep=";", dec = ".")
 
-human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_hfp2022-11-11.rds"))
 ```
 
-# Create a new table
 
-``` {r mortality hfp}
-mortality_hfp_ID <- mortality_data %>%
-  left_join(human_footprint,by="study_ID") %>%
-  dplyr::select(study_ID,calc_surv_rate,HFP2009, country, age_class_calc) %>%
-  rename(ID=study_ID,mortality=calc_surv_rate,hfp=HFP2009) %>%
-  mutate(mortality=as.numeric(mortality)) %>%
-  mutate(hfp_standard=scale(hfp))
-```
-# Linear regression
+# Plots 
 
-``` {r linear regression}
-lm1 <- glm(mortality~hfp_standard,data=mortality_hfp_ID, family = "binomial")
+``` {r create plots}
 
-plot(lm1)
+summary(mortality_data)
 
-print(lm1)
+class(mortality_data)
 
-summary(lm1)
 
-lm2 <- glmer(mortality~(1|ID)+hfp_standard,data=mortality_hfp_ID, family="binomial")
 
-summary(lm2)
-
-lm3 <- glmer(mortality~(1|country)+hfp_standard,data=mortality_hfp_ID, family="binomial")
-
-summary(lm3)
-
-lm4 <- glmer(mortality~(1|age_class_calc)+hfp_standard, data=mortality_hfp_ID, family="binomial")
-
-summary(lm4)
-
-```
-
+````

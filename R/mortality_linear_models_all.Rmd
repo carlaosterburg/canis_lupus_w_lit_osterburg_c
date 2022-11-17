@@ -60,15 +60,25 @@ biomes <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_biom
 # forest loss
 mortality_forloss_ID <- mortality_data %>%
   left_join(forest_loss,by="study_ID") %>%
-  dplyr::select(study_ID,calc_surv_rate,forloss_drivers_prj) %>%
+  dplyr::select(study_ID,calc_surv_rate,forloss_drivers_prj,country,age_class) %>%
   rename(ID=study_ID,mortality=calc_surv_rate,forloss=forloss_drivers_prj) %>%
   mutate(mortality=as.numeric(mortality)) %>%
-  mutate(forloss_standard=scale(forloss))
+  mutate(forloss_standard=scale(forloss)) 
+  
+mortality_forloss_ID2 <- mortality_forloss_ID
+
+head(mortality_forloss_ID2)
+
+mortality_forloss_ID2$age_class <- as.factor(mortality_forloss_ID2$age_class)
+
+class(mortality_forloss_ID2$age_class)
+
+head(mortality_forloss_ID2)
 
 # ecoregions
 eco_mort_ID <- mortality_data %>%
   left_join(ecoregions, by="study_ID") %>%
-  dplyr::select(study_ID,calc_surv_rate,ecoregions_wgs) %>%
+  dplyr::select(study_ID,calc_surv_rate,ecoregions_wgs,country, age_class) %>%
   rename(ID=study_ID,mortality=calc_surv_rate, eco=ecoregions_wgs) %>%
   mutate(mortality=as.numeric(mortality)) %>%
   mutate(eco_standard=scale(eco))
@@ -77,7 +87,7 @@ eco_mort_ID <- mortality_data %>%
 
 devthreat_mort_ID <- mortality_data %>%
   left_join(devthreats, by="study_ID") %>%
-  dplyr::select(study_ID,calc_surv_rate,dev_threat_prj_maskf) %>%
+  dplyr::select(study_ID,calc_surv_rate,dev_threat_prj_maskf,country,age_class) %>%
   rename(ID=study_ID,mortality=calc_surv_rate, devt=dev_threat_prj_maskf) %>%
   mutate(mortality=as.numeric(mortality)) %>%
   mutate(devt_standard=scale(devt))
@@ -86,7 +96,7 @@ devthreat_mort_ID <- mortality_data %>%
 
 wdpa_mort_ID <- mortality_data %>%
   left_join(protected_areas, by="study_ID") %>%
-  dplyr::select(study_ID,calc_surv_rate,wdpa_bin_prj) %>%
+  dplyr::select(study_ID,calc_surv_rate,wdpa_bin_prj,country,age_class) %>%
   rename(ID=study_ID,mortality=calc_surv_rate, wdpa=wdpa_bin_prj) %>%
   mutate(mortality=as.numeric(mortality)) %>%
   mutate(wdpa_standard=scale(wdpa))
@@ -95,7 +105,7 @@ wdpa_mort_ID <- mortality_data %>%
 
 access_mort_ID <- mortality_data %>%
   left_join(accessibility, by="study_ID") %>%
-  dplyr::select(study_ID,calc_surv_rate,accessibility) %>%
+  dplyr::select(study_ID,calc_surv_rate,accessibility,country,age_class) %>%
   rename(ID=study_ID,mortality=calc_surv_rate, access=accessibility) %>%
   mutate(mortality=as.numeric(mortality)) %>%
   mutate(access_standard=scale(access))
@@ -104,7 +114,7 @@ access_mort_ID <- mortality_data %>%
 
 bio_mort_ID <- mortality_data %>%
   left_join(biomes, by="study_ID") %>%
-  dplyr::select(study_ID,calc_surv_rate,biomes_wgs) %>%
+  dplyr::select(study_ID,calc_surv_rate,biomes_wgs,country,age_class) %>%
   rename(ID=study_ID,mortality=calc_surv_rate, bio=biomes_wgs) %>%
   mutate(mortality=as.numeric(mortality)) %>%
   mutate(bio_standard=scale(bio))
@@ -115,7 +125,7 @@ bio_mort_ID <- mortality_data %>%
 
 ``` {r linear regression}
 # forest loss
-lmforloss<- lm(mortality~forloss_standard,data=mortality_forloss_ID)
+lmforloss<- glm(mortality~forloss_standard,data=mortality_forloss_ID, family="binomial")
 
 plot(lmforloss)
 
@@ -123,12 +133,44 @@ print(lmforloss)
 
 summary(lmforloss)
 
-lmforloss2 <- lmer(mortality~(1|ID)+forloss_standard,data=mortality_forloss_ID)
+# ID as random effect
+
+lmforloss2 <- glmer(mortality~(1|ID)+forloss_standard,data=mortality_forloss_ID, "binomial")
 
 summary(lmforloss2)
 
+# country as random effect
+
+lmforlosscountry <-glmer(mortality~(1|country)+forloss_standard, data=mortality_forloss_ID, family="binomial")
+
+plot(lmforlosscountry)
+
+print(lmforlosscountry)
+
+summary(lmforlosscountry)
+
+# age class as random effect
+
+lmforlossage <-glmer(mortality~(1|age_class)+forloss_standard, data=mortality_forloss_ID, family="binomial")
+
+plot(lmforlossage)
+
+print(lmforlossage)
+
+summary(lmforlossage)
+
+
+# age class as factor 
+lmforlossage2 <-glmer(mortality~(1|age_class)+forloss_standard, data=mortality_forloss_ID2, family="binomial")
+
+plot(lmforlossage2)
+
+print(lmforlossage2)
+
+summary(lmforlossage2)
+
 # ecoregions
-lmeco<- lm(mortality~eco_standard,data=eco_mort_ID)
+lmeco<- glm(mortality~eco_standard,data=eco_mort_ID, family="binomial")
 
 plot(lmeco)
 
@@ -136,12 +178,24 @@ print(lmeco)
 
 summary(lmeco)
 
-lmeco2 <- lmer(mortality~(1|ID)+eco_standard,data=eco_mort_ID)
+lmeco2 <- glmer(mortality~(1|ID)+eco_standard,data=eco_mort_ID, family="binomial")
 
 summary(lmeco2)
 
+# random effect country
+
+lmecocountry <- glmer(mortality~(1|country)+eco_standard, data=eco_mort_ID, family = "binomial")
+
+summary(lmecocountry)
+
+# random effect age class
+
+lmecoage <- glmer(mortality~(1|age_class)+eco_standard, data=eco_mort_ID, family = "binomial")
+
+summary(lmecoage)
+
 # development threats
-lmdevt<- lm(mortality~devt_standard,data=devthreat_mort_ID)
+lmdevt<- glm(mortality~devt_standard,data=devthreat_mort_ID, family="binomial")
 
 plot(lmdevt)
 
@@ -149,12 +203,24 @@ print(lmdevt)
 
 summary(lmdevt)
 
-lmdevt2 <- lmer(mortality~(1|ID)+devt_standard,data=devthreat_mort_ID)
+lmdevt2 <- glmer(mortality~(1|ID)+devt_standard,data=devthreat_mort_ID, family="binomial")
 
 summary(lmeco2)
 
+# random effect country
+
+lmdevtcountry <- glmer(mortality~(1|country)+devt_standard,data=devthreat_mort_ID, family="binomial")
+
+summary(lmdevtcountry)
+
+# random effect age class
+
+lmdevtage <- glmer(mortality~(1|age_class)+devt_standard,data=devthreat_mort_ID, family="binomial")
+
+summary(lmdevtage) # 0.06503 could be significant once age classes are properly sorted out
+
 # protected areas
-lmpas<- lm(mortality~wdpa_standard,data=wdpa_mort_ID)
+lmpas<- glm(mortality~wdpa_standard,data=wdpa_mort_ID, family="binomial")
 
 plot(lmpas)
 
@@ -162,13 +228,27 @@ print(lmpas)
 
 summary(lmpas)
 
-lmpas2 <- lmer(mortality~(1|ID)+wdpa_standard,data=wdpa_mort_ID)
+lmpas2 <- glmer(mortality~(1|ID)+wdpa_standard,data=wdpa_mort_ID, family="binomial")
 
 summary(lmpas)
 
+# country as random effect 
+
+countrywdpa <- glmer(mortality~(1|country)+wdpa_standard, data=wdpa_mort_ID, family="binomial")
+
+summary(countrywdpa)
+
+# age class as random effect
+
+lmagewdpa <- glmer(mortality~(1|age_class)+wdpa_standard, data=wdpa_mort_ID, family="binomial")
+
+summary(lmagewdpa)
+
+
+
 # accessibility
 
-lmacc<- lm(mortality~access_standard,data=access_mort_ID)
+lmacc<- glm(mortality~access_standard,data=access_mort_ID, family ="binomial")
 
 plot(lmacc)
 
@@ -176,13 +256,24 @@ print(lmacc)
 
 summary(lmacc)
 
-lmacc2 <- lmer(mortality~(1|ID)+access_standard,data=access_mort_ID)
+lmacc2 <- glmer(mortality~(1|ID)+access_standard,data=access_mort_ID, family ="binomial")
 
 summary(lmacc)
 
+# country as random effect
+lmacccountry <- glmer(mortality~(1|country)+access_standard,data=access_mort_ID, family ="binomial")
+
+summary(lmacccountry)
+
+# age class as random effect
+
+lmaccage <- glmer(mortality~(1|age_class)+access_standard,data=access_mort_ID, family ="binomial")
+
+summary(lmaccage)
+
 # biomes
 
-lmbio<- lm(mortality~bio_standard,data=bio_mort_ID)
+lmbio<- glm(mortality~bio_standard,data=bio_mort_ID, family="binomial")
 
 plot(lmbio)
 
@@ -190,10 +281,22 @@ print(lmbio)
 
 summary(lmbio)
 
-lmbio2 <- lmer(mortality~(1|ID)+bio_standard,data=bio_mort_ID)
+
+lmbio2 <- glmer(mortality~(1|ID)+bio_standard,data=bio_mort_ID, family="binomial")
 
 summary(lmbio2)
 
+# country as random effect
+
+lmbiocountry <- glmer(mortality~(1|country)+bio_standard,data=bio_mort_ID, family="binomial")
+
+summary(lmbiocountry)
+
+# age class as random effect
+
+lmbioage<- glmer(mortality~(1|age_class)+bio_standard,data=bio_mort_ID, family="binomial")
+
+summary(lmbiocountry)
 
 ```
 

@@ -1,0 +1,113 @@
+---
+title: "presentation_plots"
+author: "Carla"
+date: "2022-11-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+
+```{r message=TRUE, warning=FALSE, paged.print = FALSE}
+rm(list=ls())
+library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
+library("sf") # load sf package used for spatial data
+library ("mapview") # package to create maps
+library ("terra") # package to work with rasters
+library("lme4") # package for linear regression
+library("viridis")
+install.packages("RColorBrewer")
+library("RColorBrewer")
+theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
+```
+
+# Working directories 
+``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+
+getwd()
+
+setwd("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c")
+
+plots <- file.path(here::here("plots")) # species where to save plots
+
+data.output <- file.path(here::here("output")) # specifies where to save outputs
+
+data.input <- file.path(here::here("data-raw","r-raw")) 
+
+```
+
+
+``` {r in the data}
+
+mortality_data <- read.csv2(paste0(data.input,"/mortality_13112022.csv"), header=TRUE, sep=";", dec = ".")
+
+pack_size <- read.csv2(paste0(data.input,"/no_pack_17102022.csv"), header=TRUE, sep=";", dec = ".")
+
+litter_size <- read.csv2(paste0(data.input,"/no_cubs_17102022.csv"), header=TRUE, sep=";", dec = ".")
+
+```
+
+``` {r create plots for survival data}
+
+
+# plots for survival 
+boxplot(calc_surv_rate~age_class_calc, main="Survival Rate by Age Class", xlab="Age Class", ylab="Survival Rate", data=mortality_data, rm.na="TRUE")
+
+
+mortality_data %>%
+  ggplot(aes(x=age_class_calc, y=calc_surv_rate, color=age_class_calc))+
+  geom_boxplot()+
+  geom_jitter(width=0.15, alpha=0.5)+
+  labs(x="Country", y="Survival Rate")
+
+boxplot(calc_surv_rate~country, main="Survival Rate by Country", xlab="Country", ylab="Survival Rate", data=mortality_data, col=(c("gold","darkgreen","blue", "darkred", "orange", "violet")))
+
+mortality_data %>%
+  ggplot(aes(x=country, y=calc_surv_rate, color=country))+
+  geom_boxplot()+
+  geom_jitter(width=0.15, alpha=0.5)+
+  labs(x="Country", y="Survival Rate")
+
+
+countryplot <- mortality_data %>%
+  ggplot(aes(x=country, y=calc_surv_rate, color=country))+
+  geom_boxplot()+
+  labs(x="Country", y="Survival Rate")+
+  theme(legend.position ="none")
+
+countryplot
+
+````
+
+````{r create plots for pack size}
+
+
+pack_size %>%
+  ggplot(aes(x=country, y=pack_size, color=country))+
+  geom_boxplot()+
+  geom_jitter(width=0.15, alpha=0.5)+
+  labs( y="Average Pack Size")+
+  scale_x_discrete(guide=guide_axis(n.dodge=2))
+
+boxplot(pack_size~country, main="Pack Size by Country", xlab="Country", ylab="Pack Size", data=pack_size, col=(c("gold","darkgreen","blue", "darkred", "orange", "violet")))
+
+
+````
+
+
+
+````{r create plots for litter size}
+
+litter_size %>%
+  ggplot(aes(x=country, y=no_cubs, color=country))+
+  geom_boxplot()+
+  geom_jitter(width=0.15, alpha=0.5)+
+  labs( y="Average Litter Size")
+
+boxplot(no_cubs~country, main="Litter Size by Country", xlab="Country", ylab="Litter Size", data=litter_size, col=(c("gold","darkgreen","blue", "darkred", "orange", "violet", "yellow", "green")))
+
+
+````
