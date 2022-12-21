@@ -19,7 +19,6 @@ library ("mapview") # package to create maps
 library ("terra") # package to work with rasters
 library("lme4") # package for linear regression
 library("viridis")
-install.packages("RColorBrewer")
 library("RColorBrewer")
 theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
 ```
@@ -44,6 +43,8 @@ data.input <- file.path(here::here("data-raw","r-raw"))
 
 mortality_data <- read.csv2(paste0(data.input,"/mortality_13112022.csv"), header=TRUE, sep=";", dec = ".")
 
+survival <- read.csv2(paste0(data.input,"/mortality_18112022_categories.csv"), header=TRUE, sep=";", dec = ".")
+
 pack_size <- read.csv2(paste0(data.input,"/no_pack_17102022.csv"), header=TRUE, sep=";", dec = ".")
 
 litter_size <- read.csv2(paste0(data.input,"/no_cubs_17102022.csv"), header=TRUE, sep=";", dec = ".")
@@ -53,32 +54,47 @@ litter_size <- read.csv2(paste0(data.input,"/no_cubs_17102022.csv"), header=TRUE
 ``` {r create plots for survival data}
 
 
-# plots for survival 
+# plots per age class
+
 boxplot(calc_surv_rate~age_class_calc, main="Survival Rate by Age Class", xlab="Age Class", ylab="Survival Rate", data=mortality_data, rm.na="TRUE")
+
+boxplot(calc_surv_rate~age_class_calc, main="Survival Rate by Age Class", xlab="Age Class", ylab="Survival Rate", data=survival, rm.na="TRUE")
 
 
 mortality_data %>%
   ggplot(aes(x=age_class_calc, y=calc_surv_rate, color=age_class_calc))+
   geom_boxplot()+
   geom_jitter(width=0.15, alpha=0.5)+
-  labs(x="Country", y="Survival Rate")
+  labs(x="Age Class", y="Survival Rate")
 
+
+xlabsage <- paste(levels(as.factor(survival$age_class_calc)),"\n(N=",table(survival$age_class_calc),")", sep="")
+
+survival %>%
+  ggplot(aes(x=age_class_calc, y=calc_surv_rate, color=age_class_calc))+
+  geom_boxplot()+
+  geom_jitter(width=0.15, alpha=0.5, max=1)+
+  labs(x="Age Class", y="Survival Rate")+
+  scale_x_discrete("\nAge Class",labels=xlabsage)+
+  theme(legend.position="none")
+
+ggsave(here::here("plots", "survival_age_boxplot_18112022.png"),bg="white")
+  
 boxplot(calc_surv_rate~country, main="Survival Rate by Country", xlab="Country", ylab="Survival Rate", data=mortality_data, col=(c("gold","darkgreen","blue", "darkred", "orange", "violet")))
 
-mortality_data %>%
+# Plots per country
+
+xlabscountry <- paste(levels(as.factor(survival$country)),"\n(N=",table(survival$country),")", sep="")
+  
+survival %>%
   ggplot(aes(x=country, y=calc_surv_rate, color=country))+
   geom_boxplot()+
   geom_jitter(width=0.15, alpha=0.5)+
-  labs(x="Country", y="Survival Rate")
-
-
-countryplot <- mortality_data %>%
-  ggplot(aes(x=country, y=calc_surv_rate, color=country))+
-  geom_boxplot()+
   labs(x="Country", y="Survival Rate")+
-  theme(legend.position ="none")
+  scale_x_discrete("\nCountry",labels=xlabscountry)+
+  theme(legend.position="none")
 
-countryplot
+ggsave(here::here("plots", "survival_country_boxplot_18112022.png"),bg="white")
 
 ````
 
@@ -94,6 +110,16 @@ pack_size %>%
 
 boxplot(pack_size~country, main="Pack Size by Country", xlab="Country", ylab="Pack Size", data=pack_size, col=(c("gold","darkgreen","blue", "darkred", "orange", "violet")))
 
+xlabscountrypack <- paste(levels(as.factor(pack_size$country)),"\n(N=",table(pack_size$country),")", sep="")
+  
+pack_size %>%
+  ggplot(aes(x=country, y=pack_size, color=country))+
+  geom_boxplot()+
+  geom_jitter(width=0.15, alpha=0.5)+
+  labs(x="Country", y="Average Pack Size")+
+  scale_x_discrete("\nCountry",labels=xlabscountrypack)+
+  theme(legend.position="none")
+
 
 ````
 
@@ -108,6 +134,16 @@ litter_size %>%
   labs( y="Average Litter Size")
 
 boxplot(no_cubs~country, main="Litter Size by Country", xlab="Country", ylab="Litter Size", data=litter_size, col=(c("gold","darkgreen","blue", "darkred", "orange", "violet", "yellow", "green")))
+
+xlabscountrycubs <- paste(levels(as.factor(litter_size$country)),"\n(N=",table(litter_size$country),")", sep="")
+
+litter_size %>%
+  ggplot(aes(x=country, y=no_cubs, color=country))+
+  geom_boxplot()+
+  geom_jitter(width=0.15, alpha=0.5)+
+  labs(x="Country", y="Average Litter Size")+
+  scale_x_discrete("\nCountry",labels=xlabscountrycubs)+
+  theme(legend.position="none")
 
 
 ````

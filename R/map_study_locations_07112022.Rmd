@@ -127,20 +127,20 @@ zoom_map <-
 zoom_map + 
   coord_sf(xlim = c(-18500000, -9000000), ylim = c(3500000, 13000000))
 
-ggsave(here::here("plots", "map_wolf_review_coordinates_year_america_transp.png"), 
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_america_transp_d.png"), 
        width = 4.5, height = 5, dpi = 500)
 
-ggsave(here::here("plots", "map_wolf_review_coordinates_year_america_white.png"), 
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_america_white_d.png"), 
        width = 4.5, height = 5, dpi = 500, bg = "white")
 
 ## Europe
 zoom_map + 
   coord_sf(xlim = c(-1200000, 5500000), ylim = c(5500000, 13000000))
 
-ggsave(here::here("plots", "map_wolf_review_coordinates_year_europe_transp.png"), 
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_europe_transp_d.png"), 
        width = 4.5, height = 5, dpi = 500)
 
-ggsave(here::here("plots", "map_wolf_review_coordinates_year_europe_white.png"), 
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_europe_white_d.png"), 
        width = 4.5, height = 5, dpi = 500, bg = "white")
 ```
 ``` {r location-map}

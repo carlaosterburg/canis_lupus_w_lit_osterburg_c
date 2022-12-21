@@ -149,8 +149,9 @@ mapview(combined)
 map_raster <- terra::rast(paste0(here::here("data-raw","geo-raw"),"/accessibility.tif"))
 
 str(map_raster)
+class(map_raster)
 crs(map_raster)
-plot(map_raster)
+
 ```                
 
 # Extracting values from raster
