@@ -116,6 +116,8 @@ lmforloss2 <- glmer(survival~(1|ID)+forloss_standard,data=forest_surv_ID, "binom
 
 summary(lmforloss2)
 
+isSingular(lmforloss2,tol=1e-04)
+
 # country as random effect
 
 lmforlosscountry <-glmer(survival~(1|country)+forloss_standard, data=forest_surv_ID, family="binomial")

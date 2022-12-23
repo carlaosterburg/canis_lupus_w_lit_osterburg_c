@@ -101,7 +101,7 @@ hfp_ls_ID <- litter_sizes %>%
 ``` {r linear regression}
 # forest loss
 
-lmforloss<- glm(no_cubs~forloss_standard,data=forloss_ls_ID, family="quasipoisson")
+lmforloss<- glm(no_cubs~forloss_standard,data=forloss_ls_ID, family="poisson")
 
 plot(lmforloss)
 
@@ -109,11 +109,19 @@ print(lmforloss)
 
 summary(lmforloss)
 
+# quasipoisson 
+
+quasilmforloss<- glm(no_cubs~forloss_standard,data=forloss_ls_ID, family="quasipoisson")
+
+summary(quasilmforloss)
+
+
 lmforloss2 <- glmer(no_cubs~(1|country)+forloss_standard,data=forloss_ls_ID, family="poisson")
 
 plot(lmforloss2)
 
 summary(lmforloss2)
+
 
 # protected areas
 lmpas<- glm(no_cubs~wdpa_standard,data=wdpa_ls_ID, family="poisson")
