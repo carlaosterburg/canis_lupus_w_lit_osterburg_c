@@ -1,0 +1,211 @@
+---
+title: "pack_size_glms_22122022"
+author: "Carla"
+date: "2022-12-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+
+```{r message=TRUE, warning=FALSE, paged.print = FALSE}
+rm(list=ls())
+library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
+library("sf") # load sf package used for spatial data
+library ("mapview") # package to create maps
+library ("terra") # package to work with rasters
+library("lme4") # package for linear regression
+theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
+```
+
+
+# Working directories 
+``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+getwd()
+
+setwd("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c")
+
+plots <- file.path(here::here("plots")) # species where to save plots
+
+data.output <- file.path(here::here("output")) # specifies where to save outputs
+
+data.input <- file.path(here::here("data-raw","r-raw")) 
+
+```
+
+# Load the data
+
+``` {r in the data}
+
+pack_sizes <- read.csv2(paste0("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c/data-raw/r-raw/no_pack_21122022.csv"), header=TRUE, sep=";", dec = ".")
+
+forest_loss <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_forloss2022-12-20.rds"))
+
+protected_areas <-readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_wdpa2022-12-21.rds"))
+
+accessibility <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_access2022-12-20.rds"))
+
+human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_hfp2022-12-21.rds"))
+
+```
+
+
+# Change study_ID into chr for pack size data
+
+``` {r change num to chr}
+
+# Need to turn study_ID into a character
+
+pack_sizes$study_ID <- as.character(pack_sizes$study_ID)
+
+class(pack_sizes$study_ID)
+
+str(pack_sizes)
+
+````
+
+
+# Create a new table
+
+``` {r mortality forest loss}
+
+
+# forest loss
+forloss_ps_ID <- pack_sizes %>%
+  left_join(forest_loss,by="study_ID") %>%
+  dplyr::select(study_ID,pack_size,forloss_drivers_prj,country) %>%
+  rename(ID=study_ID,forloss=forloss_drivers_prj) %>%
+  mutate(pack_size=as.numeric(pack_size)) %>%
+  mutate(forloss_standard=scale(forloss))
+
+# protected areas 
+
+wdpa_ps_ID <- pack_sizes %>%
+  left_join(protected_areas, by="study_ID") %>%
+  dplyr::select(study_ID,pack_size,wdpa_bin_prj,country) %>%
+  rename(ID=study_ID,wdpa=wdpa_bin_prj) %>%
+  mutate(pack_size=as.numeric(pack_size)) %>%
+  mutate(wdpa_standard=scale(wdpa))
+
+# accessibility 
+
+access_ps_ID <- pack_sizes %>%
+  left_join(accessibility, by="study_ID") %>%
+  dplyr::select(study_ID,pack_size,accessibility,country) %>%
+  rename(ID=study_ID,access=accessibility) %>%
+  mutate(pack_size=as.numeric(pack_size)) %>%
+  mutate(access_standard=scale(access))
+
+# human footprint
+hfp_ps_ID <- pack_sizes %>%
+  left_join(human_footprint, by="study_ID") %>%
+  dplyr::select(study_ID,pack_size,HFP2009,country) %>%
+  rename(ID=study_ID,hfp=HFP2009) %>%
+  mutate(pack_size=as.numeric(pack_size)) %>%
+  mutate(hfp_standard=scale(hfp))
+
+```
+
+# Linear regression
+
+``` {r linear regression}
+# forest loss
+lmforloss<- glm(pack_size~forloss_standard,data=forloss_ps_ID, family="poisson")
+
+plot(lmforloss)
+
+print(lmforloss)
+
+summary(lmforloss)
+
+ # Significant!!!
+
+lmforloss2<- glm(pack_size~forloss_standard,data=forloss_ps_ID, family="quasipoisson")
+
+plot(lmforloss2)
+
+print(lmforloss2)
+
+summary(lmforloss2)
+
+ # Significant!!!
+
+lmforloss3 <- glmer(pack_size~(1|country)+forloss_standard, data =forloss_ps_ID, family="poisson")
+
+plot(lmforloss3)
+
+print(lmforloss3)
+
+summary(lmforloss3)
+
+
+# protected areas
+lmpas<- glm(pack_size~wdpa_standard,data=wdpa_ps_ID, family="poisson")
+
+plot(lmpas)
+
+print(lmpas)
+
+summary(lmpas)
+
+# Not significant
+
+lmpas2<- glm(pack_size~wdpa_standard,data=wdpa_ps_ID, family="quasipoisson")
+
+plot(lmpas2)
+
+print(lmpas2)
+
+summary(lmpas2)
+
+# Nearly significant
+
+# accessibility
+
+lmacc<- glm(pack_size~access_standard,data=access_ps_ID, family="poisson")
+
+plot(lmacc)
+
+print(lmacc)
+
+summary(lmacc)
+
+# Significant 
+
+lmacc2<- glm(pack_size~access_standard,data=access_ps_ID, family="quasipoisson")
+
+plot(lmacc2)
+
+print(lmacc2)
+
+summary(lmacc2)
+
+# Significant
+
+# human footprint 
+
+lmhfp<- glm(pack_size~hfp_standard,data=hfp_ps_ID, family="poisson")
+
+plot(lmhfp)
+
+print(lmhfp)
+
+summary(lmhfp)
+
+# Significant
+
+lmhfp2<- glm(pack_size~hfp_standard,data=hfp_ps_ID, family="quasipoisson")
+
+plot(lmhfp2)
+
+print(lmhfp2)
+
+summary(lmhfp2)
+
+# Significant 
+
+```
+

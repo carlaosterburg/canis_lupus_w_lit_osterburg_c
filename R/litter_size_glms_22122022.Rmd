@@ -1,0 +1,169 @@
+---
+title: "litter_size_glms_22122022"
+author: "Carla"
+date: "2022-12-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+
+```{r message=TRUE, warning=FALSE, paged.print = FALSE}
+rm(list=ls())
+library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
+library("sf") # load sf package used for spatial data
+library ("mapview") # package to create maps
+library ("terra") # package to work with rasters
+library("lme4") # package for linear regression
+theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
+```
+
+
+# Working directories 
+``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+getwd()
+
+setwd("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c")
+
+plots <- file.path(here::here("plots")) # species where to save plots
+
+data.output <- file.path(here::here("output")) # specifies where to save outputs
+
+data.input <- file.path(here::here("data-raw","r-raw")) 
+
+```
+
+# Load the data
+
+``` {r in the data}
+
+litter_sizes <- read.csv2(paste0("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c/data-raw/r-raw/no_cubs_21122022.csv"), header=TRUE, sep=";", dec = ".")
+
+forest_loss <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_forloss2022-12-20.rds"))
+
+protected_areas <-readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_wdpa2022-12-21.rds"))
+
+accessibility <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_access2022-12-20.rds"))
+
+human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_hfp2022-12-21.rds"))
+
+```
+
+
+# Create a new table
+
+``` {r mortality forest loss}
+
+str(forest_loss)
+
+# forest loss
+forloss_ls_ID <- litter_sizes %>%
+  left_join(forest_loss,by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,forloss_drivers_prj,country) %>%
+  rename(ID=study_ID,forloss=forloss_drivers_prj) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(forloss_standard=scale(forloss))
+
+# protected areas 
+
+wdpa_ls_ID <- litter_sizes %>%
+  left_join(protected_areas, by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,wdpa_bin_prj,country) %>%
+  rename(ID=study_ID,wdpa=wdpa_bin_prj) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(wdpa_standard=scale(wdpa))
+
+# accessibility 
+
+access_ls_ID <- litter_sizes %>%
+  left_join(accessibility, by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,accessibility,country) %>%
+  rename(ID=study_ID,access=accessibility) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(access_standard=scale(access))
+
+# human footprint
+hfp_ls_ID <- litter_sizes %>%
+  left_join(human_footprint, by="study_ID") %>%
+  dplyr::select(study_ID,no_cubs,HFP2009,country) %>%
+  rename(ID=study_ID,hfp=HFP2009) %>%
+  mutate(no_cubs=as.numeric(no_cubs)) %>%
+  mutate(hfp_standard=scale(hfp))
+
+```
+
+
+# Linear regression
+
+``` {r linear regression}
+# forest loss
+
+lmforloss<- glm(no_cubs~forloss_standard,data=forloss_ls_ID, family="quasipoisson")
+
+plot(lmforloss)
+
+print(lmforloss)
+
+summary(lmforloss)
+
+lmforloss2 <- glmer(no_cubs~(1|country)+forloss_standard,data=forloss_ls_ID, family="poisson")
+
+plot(lmforloss2)
+
+summary(lmforloss2)
+
+# protected areas
+lmpas<- glm(no_cubs~wdpa_standard,data=wdpa_ls_ID, family="poisson")
+
+plot(lmpas)
+
+print(lmpas)
+
+summary(lmpas)
+
+quasilmpas <- glm(no_cubs~wdpa_standard,data=wdpa_ls_ID, family="quasipoisson")
+
+summary(quasilmpas)
+
+# accessibility
+
+lmacc<- glm(no_cubs~access_standard,data=access_ls_ID, family="poisson")
+
+plot(lmacc)
+
+print(lmacc)
+
+summary(lmacc)
+
+lmacc2<- glm(no_cubs~access_standard,data=access_ls_ID, family="quasipoisson")
+
+summary(lmacc2)
+
+
+# human footprint 
+
+lmhfp<- glm(no_cubs~hfp_standard,data=hfp_ls_ID, family="poisson")
+
+plot(lmhfp)
+
+print(lmhfp)
+
+summary(lmhfp)
+
+
+lmhfp2<- glm(no_cubs~hfp_standard,data=hfp_ls_ID, family="quasipoisson")
+
+plot(lmhfp2)
+
+print(lmhfp2)
+
+summary(lmhfp2)
+
+quasicountry <- glm(no_cubs~hfp_standard + (1|ID),data=hfp_ls_ID, family="quasipoisson")
+
+# Significant 
+
+```

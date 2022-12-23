@@ -1,0 +1,280 @@
+---
+title: "survival_glms_23122022"
+author: "Carla"
+date: "2022-12-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+
+```{r message=TRUE, warning=FALSE, paged.print = FALSE}
+rm(list=ls())
+library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
+library("sf") # load sf package used for spatial data
+library ("mapview") # package to create maps
+library ("terra") # package to work with rasters
+library("lme4") # package for linear regression
+theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
+```
+
+# Working directories 
+``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+
+setwd(here::here())
+
+plots <- file.path(here::here("plots")) # species where to save plots
+
+data.output <- file.path(here::here("output")) # specifies where to save outputs
+
+data.input <- file.path(here::here("data-raw","r-raw")) 
+
+```
+
+
+
+# Load the data
+
+``` {r in the data}
+
+survival_rates <- read.csv2(paste0("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c/data-raw/r-raw/survival_rates_23122022.csv"), header=TRUE, sep=";", dec = ".")
+
+forest_loss <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_forloss2022-12-20.rds"))
+
+protected_areas <-readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_wdpa2022-12-21.rds"))
+
+accessibility <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_access2022-12-20.rds"))
+
+human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_hfp2022-12-21.rds"))
+
+```
+
+
+# Create a new table
+
+``` {r mortality forest loss}
+
+# forest loss
+forest_surv_ID <- survival_rates %>%
+  left_join(forest_loss,by="study_ID") %>%
+  dplyr::select(study_ID,calc_surv_rate,forloss_drivers_prj,country,age_class_calc) %>%
+  rename(ID=study_ID,survival=calc_surv_rate,forloss=forloss_drivers_prj,age=age_class_calc) %>%
+  mutate(survival=as.numeric(survival)) %>%
+  mutate(forloss_standard=scale(forloss))
+
+# protected areas
+pas_surv_ID <- survival_rates %>%
+  left_join(protected_areas,by="study_ID") %>%
+  dplyr::select(study_ID,calc_surv_rate,wdpa_bin_prj,country,age_class_calc) %>%
+  rename(ID=study_ID,survival=calc_surv_rate,wdpa=wdpa_bin_prj,age=age_class_calc) %>%
+  mutate(survival=as.numeric(survival)) %>%
+  mutate(wdpa_standard=scale(wdpa))
+
+
+# accessibility 
+access_surv_ID <- survival_rates %>%
+  left_join(accessibility, by="study_ID") %>%
+  dplyr::select(study_ID,calc_surv_rate,accessibility,country,age_class_calc) %>%
+  rename(ID=study_ID,survival=calc_surv_rate, access=accessibility,age=age_class_calc) %>%
+  mutate(survival=as.numeric(survival)) %>%
+  mutate(access_standard=scale(access))
+
+# human footprint
+hfp_surv_ID <- survival_rates %>%
+  left_join(human_footprint, by="study_ID") %>%
+  dplyr::select(study_ID,calc_surv_rate,HFP2009,country, age_class_calc) %>%
+  rename(ID=study_ID,survival=calc_surv_rate,hfp=HFP2009,age=age_class_calc) %>%
+  mutate(survival=as.numeric(survival)) %>%
+  mutate(hfp_standard=scale(hfp))
+
+````
+
+# Linear regression for forest loss
+
+``` {r linear regression}
+# forest loss
+lmforloss<- glm(survival~forloss_standard,data=forest_surv_ID, family="binomial")
+
+plot(lmforloss)
+
+print(lmforloss)
+
+summary(lmforloss)
+
+# quasibinomial
+
+quasilmforloss<- glm(survival~forloss_standard,data=forest_surv_ID, family="quasibinomial")
+
+summary(quasilmforloss)
+
+# ID as random effect
+
+lmforloss2 <- glmer(survival~(1|ID)+forloss_standard,data=forest_surv_ID, "binomial")
+
+summary(lmforloss2)
+
+# country as random effect
+
+lmforlosscountry <-glmer(survival~(1|country)+forloss_standard, data=forest_surv_ID, family="binomial")
+
+plot(lmforlosscountry)
+
+print(lmforlosscountry)
+
+summary(lmforlosscountry)
+
+# age class as random effect
+
+lmforlossage <-glmer(survival~(1|age)+forloss_standard, data=forest_surv_ID, family="binomial")
+
+plot(lmforlossage)
+
+print(lmforlossage)
+
+summary(lmforlossage)
+
+```` 
+# Linear regressions for PAs
+
+```` {r linear regression}
+# protected areas
+
+paslm <- glm(survival~wdpa_standard, data=pas_surv_ID, family="binomial")
+
+plot(paslm)
+
+print(paslm)
+
+summary(paslm)
+
+# quasibinomial
+
+quasipaslm <- glm(survival~wdpa_standard, data=pas_surv_ID, family="quasibinomial")
+
+summary(quasipaslm)
+
+# Significant
+
+# ID as random effect
+
+paslm2 <- glmer(survival~(1|ID)+wdpa_standard,data=pas_surv_ID, "binomial")
+
+summary(paslm2)
+
+# country as random effect
+
+paslm3 <-glmer(survival~(1|country)+wdpa_standard, data=pas_surv_ID, family="binomial")
+
+plot(paslm3)
+
+print(paslm3)
+
+summary(paslm3)
+
+# age class as random effect
+
+paslm4 <-glmer(survival~(1|age)+wdpa_standard, data=pas_surv_ID, family="binomial")
+
+plot(paslm4)
+
+print(paslm4)
+
+summary(paslm4)
+````
+
+# Linear regressions for accessibility
+
+```` {r linear regression}
+# protected areas
+
+accesslm <- glm(survival~access_standard, data=access_surv_ID, family="binomial")
+
+plot(accesslm)
+
+print(accesslm)
+
+summary(accesslm)
+
+# quasibinomial
+
+quasiaccesslm <- glm(survival~access_standard, data=access_surv_ID, family="quasibinomial")
+
+summary(quasiaccesslm)
+
+
+# ID as random effect
+
+accesslm2 <- glmer(survival~(1|ID)+access_standard,data=access_surv_ID, "binomial")
+
+summary(accesslm2)
+
+# country as random effect
+
+accesslm3 <-glmer(survival~(1|country)+access_standard, data=access_surv_ID, family="binomial")
+
+plot(accesslm3)
+
+print(accesslm3)
+
+summary(accesslm3)
+
+# age class as random effect
+
+accesslm4 <-glmer(survival~(1|age)+access_standard, data=access_surv_ID, family="binomial")
+
+plot(accesslm4)
+
+print(accesslm4)
+
+summary(accesslm4)
+````
+
+# linear models for human footprint
+```` {r linear regression}
+# human footprint
+
+hfplm <- glm(survival~hfp_standard, data=hfp_surv_ID, family="binomial")
+
+plot(hfplm)
+
+print(hfplm)
+
+summary(hfplm)
+
+# quasibinomial
+
+quasihfplm <- glm(survival~hfp_standard, data=hfp_surv_ID, family="quasibinomial")
+
+summary(quasihfplm)
+
+
+# ID as random effect
+
+hfplm2 <- glmer(survival~(1|ID)+hfp_standard,data=hfp_surv_ID, "binomial")
+
+summary(hfplm2)
+
+# country as random effect
+
+hfplm3 <-glmer(survival~(1|country)+hfp_standard, data=hfp_surv_ID, family="binomial")
+
+plot(hfplm3)
+
+print(hfplm3)
+
+summary(hfplm3)
+
+# age class as random effect
+
+hfplm4 <-glmer(survival~(1|age)+hfp_standard, data=hfp_surv_ID, family="binomial")
+
+plot(hfplm4)
+
+print(hfplm4)
+
+summary(hfplm4)
+````
+
