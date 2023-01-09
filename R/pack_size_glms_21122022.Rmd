@@ -18,6 +18,7 @@ library("sf") # load sf package used for spatial data
 library ("mapview") # package to create maps
 library ("terra") # package to work with rasters
 library("lme4") # package for linear regression
+library("leaps")
 theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
 ```
 
@@ -70,8 +71,7 @@ str(pack_sizes)
 
 # Create a new table
 
-``` {r mortality forest loss}
-
+``` {r combine dataframes}
 
 # forest loss
 forloss_ps_ID <- pack_sizes %>%
@@ -79,25 +79,26 @@ forloss_ps_ID <- pack_sizes %>%
   dplyr::select(study_ID,pack_size,forloss_drivers_prj,country) %>%
   rename(ID=study_ID,forloss=forloss_drivers_prj) %>%
   mutate(pack_size=as.numeric(pack_size)) %>%
-  mutate(forloss_standard=scale(forloss))
+  mutate(forloss_standard=scale(forloss)) %>%
+  na.omit()
 
 # protected areas 
-
 wdpa_ps_ID <- pack_sizes %>%
   left_join(protected_areas, by="study_ID") %>%
   dplyr::select(study_ID,pack_size,wdpa_bin_prj,country) %>%
   rename(ID=study_ID,wdpa=wdpa_bin_prj) %>%
   mutate(pack_size=as.numeric(pack_size)) %>%
-  mutate(wdpa_standard=scale(wdpa))
+  mutate(wdpa_standard=scale(wdpa)) %>%
+  na.omit()
 
 # accessibility 
-
 access_ps_ID <- pack_sizes %>%
   left_join(accessibility, by="study_ID") %>%
   dplyr::select(study_ID,pack_size,accessibility,country) %>%
   rename(ID=study_ID,access=accessibility) %>%
   mutate(pack_size=as.numeric(pack_size)) %>%
-  mutate(access_standard=scale(access))
+  mutate(access_standard=scale(access)) %>%
+  na.omit()
 
 # human footprint
 hfp_ps_ID <- pack_sizes %>%
@@ -105,21 +106,91 @@ hfp_ps_ID <- pack_sizes %>%
   dplyr::select(study_ID,pack_size,HFP2009,country) %>%
   rename(ID=study_ID,hfp=HFP2009) %>%
   mutate(pack_size=as.numeric(pack_size)) %>%
-  mutate(hfp_standard=scale(hfp))
+  mutate(hfp_standard=scale(hfp)) %>%
+  na.omit()
+
+all_variables <- access_ps_ID %>%
+  left_join(forloss_ps_ID) %>%
+  left_join(wdpa_ps_ID) %>%
+  left_join(hfp_ps_ID) %>%
+  dplyr::select(-c(hfp, wdpa, access,forloss,ID))
+
+regfit_full = regsubsets(pack_size~., data = all_variables, nvmax = NULL)
+reg_summary= summary(regfit_full)
+
+names(reg_summary)
+
+reg_summary$rsq
 
 ```
+```` {r plot the rsqr}
+
+# Set up a 2x2 grid so we can look at 4 plots at once
+par(mfrow = c(2,2))
+plot(reg_summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
+plot(reg_summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted RSq", type = "l")
+
+# We will now plot a red dot to indicate the model with the largest adjusted R^2 statistic.
+# The which.max() function can be used to identify the location of the maximum point of a vector
+adj_r2_max = which.max(reg_summary$adjr2) # 3
+
+# The points() command works like the plot() command, except that it puts points 
+# on a plot that has already been created instead of creating a new plot
+points(adj_r2_max, reg_summary$adjr2[adj_r2_max], col ="red", cex = 2, pch = 20)
+
+# We'll do the same for C_p and BIC, this time looking for the models with the SMALLEST statistic
+plot(reg_summary$cp, xlab = "Number of Variables", ylab = "Cp", type = "l")
+cp_min = which.min(reg_summary$cp) # 2
+points(cp_min, reg_summary$cp[cp_min], col = "red", cex = 2, pch = 20)
+
+plot(reg_summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "l")
+bic_min = which.min(reg_summary$bic) # 2
+points(bic_min, reg_summary$bic[bic_min], col = "red", cex = 2, pch = 20)
+````
+
+````{r more plots}
+
+plot(regfit_full, scale = "r2")
+
+plot(regfit_full, scale = "adjr2")
+
+coef(regfit_full, 3)
+
+plot(regfit_full, scale = "Cp")
+
+coef(regfit_full, 2)
+
+plot(regfit_full, scale = "bic")
+
+coef(regfit_full, 2)
+
+coef(regfit_full,2)
+
+regfit_fwd = regsubsets(pack_size~., data = all_variables, nvmax = 2, method = "forward")
+summary(regfit_fwd)
+
+regfit_bwd = regsubsets(pack_size~., data = all_variables, nvmax = 2, method = "backward")
+summary(regfit_bwd)
+
+coef(regfit_full, 2)
+coef(regfit_fwd, 2)
+coef(regfit_bwd, 2)
+
+````
+
 
 # Linear regression
 
 ``` {r linear regression}
 # forest loss
-lmforloss<- glm(pack_size~forloss_standard,data=forloss_ps_ID, family="poisson")
+lmforloss<- glm(pack_size~forloss_standard,data=all_variables, family="poisson")
 
 plot(lmforloss)
 
 print(lmforloss)
 
 summary(lmforloss)
+
 
  # Significant!!!
 
@@ -141,6 +212,46 @@ print(lmforloss3)
 
 summary(lmforloss3)
 
+
+# forest loss and human footprint
+lmforloss4 <- glm(pack_size~forloss_standard+hfp_standard, data=all_variables, family="poisson")
+
+plot(lmforloss4)
+
+print(lmforloss4)
+
+summary(lmforloss4)
+
+# Nearly significant
+
+qlmforloss2<- glm(pack_size~forloss_standard+hfp_standard,data= all_variables, family="quasipoisson")
+
+summary(qlmforloss2)
+
+# Significant
+
+# Forest loss, human footprint and accessibility
+lmforloss5 <-glm(pack_size~forloss_standard+hfp_standard+access_standard, data=all_variables, family="poisson")
+
+summary(lmforloss5)
+
+# Quasi Forest loss, human footprint and accessibility
+
+qlmforloss3 <-glm(pack_size~forloss_standard+hfp_standard+access_standard, data=all_variables, family="quasipoisson")
+
+summary(qlmforloss3)
+
+# All impacts with forest loss 
+
+lmforloss6 <- glm(pack_size~forloss_standard+hfp_standard+access_standard+wdpa_standard, data=all_variables, family="poisson")
+
+summary(lmforloss6)
+
+# Quasi all impacts
+
+qlmforloss4 <- glm(pack_size~forloss_standard+hfp_standard+access_standard+wdpa_standard, data=all_variables, family="quasipoisson")
+
+summary(qlmforloss4)
 
 # protected areas
 lmpas<- glm(pack_size~wdpa_standard,data=wdpa_ps_ID, family="poisson")
@@ -204,6 +315,7 @@ plot(lmhfp2)
 print(lmhfp2)
 
 summary(lmhfp2)
+
 
 # Significant 
 
