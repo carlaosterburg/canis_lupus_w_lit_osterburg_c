@@ -18,6 +18,8 @@ library("sf") # load sf package used for spatial data
 library ("mapview") # package to create maps
 library ("terra") # package to work with rasters
 library("lme4") # package for linear regression
+library("AICcmodavg") # package to compare models
+library("effects") # package to compute effects of a model for use in plots
 theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
 ```
 
@@ -26,7 +28,7 @@ theme_set(theme_minimal(base_size = 14)) # set ggplot theme
 ``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
 getwd()
 
-setwd("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c")
+# setwd("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c")
 
 plots <- file.path(here::here("plots")) # species where to save plots
 
@@ -40,15 +42,15 @@ data.input <- file.path(here::here("data-raw","r-raw"))
 
 ``` {r in the data}
 
-litter_sizes <- read.csv2(paste0("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c/data-raw/r-raw/no_cubs_21122022.csv"), header=TRUE, sep=";", dec = ".")
+litter_sizes <- read.csv2(paste0("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c/data-raw/r-raw/no_cubs_20012023.csv"), header=TRUE, sep=";", dec = ".")
 
-forest_loss <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_forloss2022-12-20.rds"))
+forest_loss <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_forloss2023-01-20.rds"))
 
-protected_areas <-readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_wdpa2022-12-21.rds"))
+protected_areas <-readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_wdpa2023-01-20.rds"))
 
-accessibility <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_access2022-12-20.rds"))
+accessibility <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_access2023-01-20.rds"))
 
-human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_hfp2022-12-21.rds"))
+human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_hfp2023-01-20.rds"))
 
 ```
 
@@ -57,15 +59,14 @@ human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_bu
 
 ``` {r mortality forest loss}
 
-str(forest_loss)
-
 # forest loss
 forloss_ls_ID <- litter_sizes %>%
   left_join(forest_loss,by="study_ID") %>%
   dplyr::select(study_ID,no_cubs,forloss_drivers_prj,country) %>%
   rename(ID=study_ID,forloss=forloss_drivers_prj) %>%
   mutate(no_cubs=as.numeric(no_cubs)) %>%
-  mutate(forloss_standard=scale(forloss))
+  mutate(forloss_standard=scale(forloss)) %>%
+  na.omit()
 
 # protected areas 
 
@@ -74,7 +75,8 @@ wdpa_ls_ID <- litter_sizes %>%
   dplyr::select(study_ID,no_cubs,wdpa_bin_prj,country) %>%
   rename(ID=study_ID,wdpa=wdpa_bin_prj) %>%
   mutate(no_cubs=as.numeric(no_cubs)) %>%
-  mutate(wdpa_standard=scale(wdpa))
+  mutate(wdpa_standard=scale(wdpa)) %>%
+  na.omit()
 
 # accessibility 
 
@@ -83,7 +85,8 @@ access_ls_ID <- litter_sizes %>%
   dplyr::select(study_ID,no_cubs,accessibility,country) %>%
   rename(ID=study_ID,access=accessibility) %>%
   mutate(no_cubs=as.numeric(no_cubs)) %>%
-  mutate(access_standard=scale(access))
+  mutate(access_standard=scale(access)) %>%
+  na.omit()
 
 # human footprint
 hfp_ls_ID <- litter_sizes %>%
@@ -91,7 +94,17 @@ hfp_ls_ID <- litter_sizes %>%
   dplyr::select(study_ID,no_cubs,HFP2009,country) %>%
   rename(ID=study_ID,hfp=HFP2009) %>%
   mutate(no_cubs=as.numeric(no_cubs)) %>%
-  mutate(hfp_standard=scale(hfp))
+  mutate(hfp_standard=scale(hfp)) %>%
+  na.omit()
+
+# Combine socio-environmental factors 
+all_var <- access_ls_ID %>%
+  left_join(forloss_ls_ID) %>%
+  left_join(wdpa_ls_ID) %>%
+  left_join(hfp_ls_ID) %>%
+  dplyr::select(-c(hfp, wdpa, access,forloss,ID))
+
+summary(all_var)
 
 ```
 
@@ -175,3 +188,56 @@ quasicountry <- glm(no_cubs~hfp_standard + (1|ID),data=hfp_ls_ID, family="quasip
 # Significant 
 
 ```
+
+
+```` {r mixed effects models}
+
+# One predictor and random effect of country
+forloss_country <- glmer(no_cubs~forloss_standard+(1|country), data=all_var, family="poisson")
+summary(forloss_hfp_country)
+
+pas_country <- glmer(no_cubs~wdpa_standard+(1|country), data=all_var, family="poisson")
+
+access_country <- glmer(no_cubs~ access_standard+(1|country), data=all_var, family="poisson")
+
+hfp_country <- glmer(no_cubs~ hfp_standard+(1|country), data=all_var, family="poisson")
+
+# Two predictors and random effect of country
+
+forloss_hfp_country <- glmer(no_cubs~forloss_standard+(1|country)+hfp_standard, data=all_var, family="poisson")
+
+forloss_access_country <- glmer(no_cubs~forloss_standard+(1|country)+access_standard, data=all_var, family="poisson")
+
+forloss_pas_country <- glmer(no_cubs~forloss_standard+(1|country)+wdpa_standard, data=all_var, family="poisson")
+
+hfp_access_country <- glmer(no_cubs~hfp_standard+(1|country)+access_standard, data= all_var, family = "poisson")
+
+hfp_pas_country <- glmer(no_cubs~hfp_standard+(1|country)+wdpa_standard, data=all_var, family="poisson")
+
+access_pas_country <- glmer(no_cubs~access_standard+(1|country)+wdpa_standard, data=all_var, family="poisson")
+
+# 3 predictors & country as random effect
+
+forloss_hfp_access <- glmer(no_cubs~forloss_standard+(1|country)+hfp_standard+access_standard, data=all_var, family="poisson")
+
+forloss_hfp_pas <- glmer(no_cubs~forloss_standard+(1|country)+hfp_standard+wdpa_standard, data=all_var, family="poisson")
+
+forloss_pas_access <- glmer(no_cubs~forloss_standard+(1|country)+wdpa_standard+access_standard, data=all_var, family="poisson")
+
+hfp_access_pas <- glmer(no_cubs~hfp_standard+(1|country)+access_standard+wdpa_standard, data=all_var, family="poisson")
+
+# 4 predictors & country as random effect
+
+all_pred <- glmer(no_cubs~forloss_standard+(1|country)+wdpa_standard+access_standard+hfp_standard, data=all_var, family="poisson")
+
+summary(forloss_access_country)
+
+mixed_models<- list(forloss_country,pas_country, access_country, hfp_country, forloss_hfp_country, forloss_access_country, forloss_pas_country, hfp_access_country, hfp_pas_country, access_pas_country, forloss_hfp_access, forloss_hfp_pas, forloss_pas_access, hfp_access_pas,all_pred)
+
+saveRDS(mixed_models, paste0(data.output,"/data-proc/mixed_mods_litter_size",Sys.Date(),".rds"))
+
+mixed_model_names <- c('forloss_country', 'pas_country', 'access_country', 'hfp_country', 'forloss_hfp_country','forloss_access_country','forloss_pas_country','hfp_access_country', 'hfp_pas_country','access_pas_country', 'forloss_hfp_access','forloss_hfp_pas', 'forloss_pas_access','hfp_access_pas', 'all_pred')
+
+aictab(cand.set = mixed_models, modnames= mixed_model_names)
+
+`````

@@ -1,0 +1,336 @@
+---
+title: "pack_size_glmer_20012023"
+author: "Carla"
+date: "2023-01-20"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages 
+
+```{r message=TRUE, warning=FALSE, paged.print = FALSE}
+rm(list=ls())
+library("tidyverse") # loads packages tidyr, ggplot2 and dplyr
+library("sf") # load sf package used for spatial data
+library ("mapview") # package to create maps
+library ("terra") # package to work with rasters
+library("lme4") # package for linear regression
+library("leaps") # package to find best subset selection
+library("qpcR") # enables the calculation of RSS or Rsq
+theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
+```
+
+
+# Working directories 
+``` {r message=TRUE, warning=TRUE, paged.print=FALSE}
+getwd()
+
+#setwd("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c")
+
+plots <- file.path(here::here("plots")) # species where to save plots
+
+data.output <- file.path(here::here("output")) # specifies where to save outputs
+
+data.input <- file.path(here::here("data-raw","r-raw")) 
+
+```
+
+# Load the data
+
+``` {r in the data}
+
+pack_sizes <- read.csv2(paste0("C:/Users/carla/Documents/Master Thesis/canis_lupus_w_lit_osterburg_c/data-raw/r-raw/no_pack_20012023.csv"), header=TRUE, sep=";", dec = ".")
+
+forest_loss <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_forloss2023-01-20.rds"))
+
+protected_areas <-readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_wdpa2023-01-20.rds"))
+
+accessibility <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_access2023-01-20.rds"))
+
+human_footprint <- readRDS(paste0(data.output, "/data-proc/dataframe_combined_buffer_hfp2023-01-20.rds"))
+
+```
+
+
+# Change study_ID into chr for pack size data
+
+``` {r change num to chr}
+
+# Need to turn study_ID into a character
+
+pack_sizes$study_ID <- as.character(pack_sizes$study_ID)
+
+class(pack_sizes$study_ID)
+
+str(pack_sizes)
+
+````
+
+
+# Create a new table
+
+``` {r mortality forest loss}
+
+
+# forest loss
+forloss_ps_ID <- pack_sizes %>%
+  left_join(forest_loss,by="study_ID") %>%
+  dplyr::select(study_ID,pack_size,forloss_drivers_prj,country) %>%
+  rename(ID=study_ID,forloss=forloss_drivers_prj) %>%
+  mutate(pack_size=as.numeric(pack_size)) %>%
+  mutate(forloss_standard=scale(forloss)) %>%
+  na.omit()
+
+# protected areas 
+
+wdpa_ps_ID <- pack_sizes %>%
+  left_join(protected_areas, by="study_ID") %>%
+  dplyr::select(study_ID,pack_size,wdpa_bin_prj,country) %>%
+  rename(ID=study_ID,wdpa=wdpa_bin_prj) %>%
+  mutate(pack_size=as.numeric(pack_size)) %>%
+  mutate(wdpa_standard=scale(wdpa)) %>%
+  na.omit()
+
+# accessibility 
+
+access_ps_ID <- pack_sizes %>%
+  left_join(accessibility, by="study_ID") %>%
+  dplyr::select(study_ID,pack_size,accessibility,country) %>%
+  rename(ID=study_ID,access=accessibility) %>%
+  mutate(pack_size=as.numeric(pack_size)) %>%
+  mutate(access_standard=scale(access)) %>%
+  na.omit()
+
+# human footprint
+hfp_ps_ID <- pack_sizes %>%
+  left_join(human_footprint, by="study_ID") %>%
+  dplyr::select(study_ID,pack_size,HFP2009,country) %>%
+  rename(ID=study_ID,hfp=HFP2009) %>%
+  mutate(pack_size=as.numeric(pack_size)) %>%
+  mutate(hfp_standard=scale(hfp)) %>%
+  na.omit()
+
+# Combine socio-environmental factors # maybe take out NAs before joining
+all_var <- access_ps_ID %>%
+  left_join(forloss_ps_ID) %>%
+  left_join(wdpa_ps_ID) %>%
+  left_join(hfp_ps_ID) %>%
+  dplyr::select(-c(hfp, wdpa, access,forloss,ID))
+
+```
+
+# Linear regression
+
+``` {r linear regression}
+# forest loss
+lmforloss<- glm(pack_size~forloss_standard,data=forloss_ps_ID, family="poisson")
+
+plot(lmforloss)
+
+print(lmforloss)
+
+summary(lmforloss)
+
+anova(lmforloss)["Residuals", "Sum Sq"] 
+
+with(summary(lmforloss), df[1]*sigma^2)
+
+RSS(lmforloss)
+
+Rsq(lmforloss)
+
+deviance(lmforloss)
+
+BIC(lmforloss)
+
+ # Significant!!!
+
+lmforloss2<- glm(pack_size~forloss_standard,data=forloss_ps_ID, family="quasipoisson")
+
+plot(lmforloss2)
+
+print(lmforloss2)
+
+summary(lmforloss2)
+
+RSS(lmforloss2)
+
+ # Significant!!!
+
+lmforloss3 <- glmer(pack_size~(1|country)+forloss_standard, data =forloss_ps_ID, family="poisson")
+
+plot(lmforloss3)
+
+print(lmforloss3)
+
+summary(lmforloss3)
+
+
+# protected areas
+lmpas<- glm(pack_size~wdpa_standard,data=wdpa_ps_ID, family="poisson")
+
+plot(lmpas)
+
+print(lmpas)
+
+summary(lmpas)
+
+RSS(lmpas)
+
+Rsq(lmpas)
+
+# Not significant
+
+lmpas2<- glm(pack_size~wdpa_standard,data=wdpa_ps_ID, family="quasipoisson")
+
+plot(lmpas2)
+
+print(lmpas2)
+
+summary(lmpas2)
+
+# Nearly significant
+
+# accessibility
+
+lmacc<- glm(pack_size~access_standard,data=access_ps_ID, family="poisson")
+
+plot(lmacc)
+
+print(lmacc)
+
+summary(lmacc)
+
+RSS(lmacc)
+
+Rsq(lmacc)
+
+# Significant 
+
+lmacc2<- glm(pack_size~access_standard,data=access_ps_ID, family="quasipoisson")
+
+plot(lmacc2)
+
+print(lmacc2)
+
+summary(lmacc2)
+
+# Significant
+
+# human footprint 
+
+lmhfp<- glm(pack_size~hfp_standard,data=hfp_ps_ID, family="poisson")
+
+plot(lmhfp)
+
+print(lmhfp)
+
+summary(lmhfp)
+
+RSS(lmhfp)
+
+# Significant
+
+lmhfp2<- glm(pack_size~hfp_standard,data=hfp_ps_ID, family="quasipoisson")
+
+plot(lmhfp2)
+
+print(lmhfp2)
+
+summary(lmhfp2)
+
+# Significant 
+
+```
+
+``` {r general linear mixed effect models}
+
+# One predictor and random effect of country
+forloss_country <- glmer(pack_size~forloss_standard+(1|country), data=all_var, family="poisson") # nearly significant
+
+summary(forloss_country)
+plot(forloss_country)
+
+
+library("effects")
+effects_country <- effects::effect(term = "forloss_standard", mod=forloss_country)
+summary(effects_country)
+
+
+x_country <- as.data.frame(effects_country)
+
+ggplot() + geom_point(data=all_var, aes(forloss_standard, pack_size, colour=country)) + geom_point(data=x_country, aes(x=forloss_standard, y=fit), colour="black")+ geom_line(data=x_country, aes(x=forloss_standard, y=fit), colour="black")+ geom_ribbon(data=x_country, aes(x=forloss_standard, ymin=lower, ymax=upper), alpha=0.2, fill="grey")+ theme_classic() +theme(legend.position = "right") + labs(title= "Effect of Forest Loss on Pack Size", xlab=(" Forest loss"), ylab= ("Pack size"))
+
+ggsave(here::here("plots", "pack_size_forloss_country_02012023.png"), width = 9, height = 5, dpi = 500, bg="white")
+
+# labs(x="Forest loss", y="Pack size")+
+
+# Plot with country colours       
+       colour_plot <- ggplot(all_var, aes(x = forloss_standard, y = pack_size, colour = country)) +
+  geom_point(size = 2) +
+  theme_classic() +
+  theme(legend.position = "right") +
+         labs(title= "Effect of Forest Loss on Pack Size", xlab=" Forest loss", ylab= "Pack size" )
+
+ggsave(here::here("plots", "pack_size_count_forloss_20012023.png"), width = 9, height = 5, dpi = 500, bg="white")    
+
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+
+sjPlot::plot_model(hfp_country)
+
+pas_country <- glmer(pack_size~wdpa_standard+(1|country), data=all_var, family="poisson")
+
+summary(hfp_country)
+
+access_country <- glmer(pack_size~ access_standard+(1|country), data=all_var, family="poisson")
+
+hfp_country <- glmer(pack_size~ hfp_standard+(1|country), data=all_var, family="poisson")
+
+# Two predictors and random effect of country
+
+forloss_hfp_country <- glmer(pack_size~forloss_standard+(1|country)+hfp_standard, data=all_var, family="poisson")
+
+forloss_access_country <- glmer(pack_size~forloss_standard+(1|country)+access_standard, data=all_var, family="poisson")
+
+forloss_pas_country <- glmer(pack_size~forloss_standard+(1|country)+wdpa_standard, data=all_var, family="poisson")
+
+hfp_access_country <- glmer(pack_size~hfp_standard+(1|country)+access_standard, data= all_var, family = "poisson")
+
+hfp_pas_country <- glmer(pack_size~hfp_standard+(1|country)+wdpa_standard, data=all_var, family="poisson")
+
+access_pas_country <- glmer(pack_size~access_standard+(1|country)+wdpa_standard, data=all_var, family="poisson")
+
+# 3 predictors & country as random effect
+
+forloss_hfp_access <- glmer(pack_size~forloss_standard+(1|country)+hfp_standard+access_standard, data=all_var, family="poisson")
+
+summary(all_pred)
+
+forloss_hfp_pas <- glmer(pack_size~forloss_standard+(1|country)+hfp_standard+wdpa_standard, data=all_var, family="poisson")
+
+forloss_pas_access <- glmer(pack_size~forloss_standard+(1|country)+wdpa_standard+access_standard, data=all_var, family="poisson")
+
+hfp_access_pas <- glmer(pack_size~hfp_standard+(1|country)+access_standard+wdpa_standard, data=all_var, family="poisson")
+
+# 4 predictors & country as random effect
+
+all_pred <- glmer(pack_size~forloss_standard+(1|country)+wdpa_standard+access_standard+hfp_standard, data=all_var, family="poisson")
+
+mixed_models<- list(forloss_country,pas_country, access_country, hfp_country, forloss_hfp_country, forloss_access_country, forloss_pas_country, hfp_access_country, hfp_pas_country, access_pas_country, forloss_hfp_access, forloss_hfp_pas, forloss_pas_access, hfp_access_pas,all_pred)
+
+mixed_model_names <- c('forloss_country', 'pas_country', 'access_country', 'hfp_country', 'forloss_hfp_country','forloss_access_country','forloss_pas_country','hfp_access_country', 'hfp_pas_country','access_pas_country', 'forloss_hfp_access','forloss_hfp_pas', 'forloss_pas_access','hfp_access_pas', 'all_pred')
+
+aictable <- aictab(cand.set = mixed_models, modnames= mixed_model_names)
+
+dfaic <- as.data.frame(aictable)
+
+write.csv(dfaic,data.output,row.names = FALSE)
+
+bictab(cand.set=mixed_models, modnames=mixed_model_names)
+
+
+```

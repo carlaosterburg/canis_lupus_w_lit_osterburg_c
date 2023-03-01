@@ -18,6 +18,9 @@ library("sf") # load sf package used for spatial data
 library ("mapview") # package to create maps
 library ("terra") # package to work with rasters
 library("lme4") # package for linear regression
+library("leaps") # package to create subsets
+library("AICcmodavg") # package to compare models
+library("ggimage")
 theme_set(theme_minimal(base_size = 14)) # set ggplot theme 
 ```
 
@@ -63,7 +66,8 @@ forest_surv_ID <- survival_rates %>%
   dplyr::select(study_ID,calc_surv_rate,forloss_drivers_prj,country,age_class_calc) %>%
   rename(ID=study_ID,survival=calc_surv_rate,forloss=forloss_drivers_prj,age=age_class_calc) %>%
   mutate(survival=as.numeric(survival)) %>%
-  mutate(forloss_standard=scale(forloss))
+  mutate(forloss_standard=scale(forloss)) %>%
+  na.omit()
 
 # protected areas
 pas_surv_ID <- survival_rates %>%
@@ -71,7 +75,8 @@ pas_surv_ID <- survival_rates %>%
   dplyr::select(study_ID,calc_surv_rate,wdpa_bin_prj,country,age_class_calc) %>%
   rename(ID=study_ID,survival=calc_surv_rate,wdpa=wdpa_bin_prj,age=age_class_calc) %>%
   mutate(survival=as.numeric(survival)) %>%
-  mutate(wdpa_standard=scale(wdpa))
+  mutate(wdpa_standard=scale(wdpa)) %>%
+  na.omit()
 
 
 # accessibility 
@@ -80,7 +85,8 @@ access_surv_ID <- survival_rates %>%
   dplyr::select(study_ID,calc_surv_rate,accessibility,country,age_class_calc) %>%
   rename(ID=study_ID,survival=calc_surv_rate, access=accessibility,age=age_class_calc) %>%
   mutate(survival=as.numeric(survival)) %>%
-  mutate(access_standard=scale(access))
+  mutate(access_standard=scale(access))%>%
+  na.omit()
 
 # human footprint
 hfp_surv_ID <- survival_rates %>%
@@ -88,7 +94,20 @@ hfp_surv_ID <- survival_rates %>%
   dplyr::select(study_ID,calc_surv_rate,HFP2009,country, age_class_calc) %>%
   rename(ID=study_ID,survival=calc_surv_rate,hfp=HFP2009,age=age_class_calc) %>%
   mutate(survival=as.numeric(survival)) %>%
-  mutate(hfp_standard=scale(hfp))
+  mutate(hfp_standard=scale(hfp)) %>%
+  na.omit()
+
+# Combine socio-environmental factors 
+all_var <- access_surv_ID %>%
+  left_join(forest_surv_ID) %>%
+  left_join(pas_surv_ID) %>%
+  left_join(hfp_surv_ID) %>%
+  dplyr::select(-c(hfp, wdpa, access,forloss,ID))
+
+
+all_var2 <- all_var %>%
+  na.omit() %>%
+  mutate_at(c(4,5,6,7),tibble(c(scale(.))))
 
 ````
 
@@ -158,6 +177,8 @@ quasipaslm <- glm(survival~wdpa_standard, data=pas_surv_ID, family="quasibinomia
 
 summary(quasipaslm)
 
+plot(quasipaslm)
+
 # Significant
 
 # ID as random effect
@@ -185,12 +206,15 @@ plot(paslm4)
 print(paslm4)
 
 summary(paslm4)
+
+
+
 ````
 
 # Linear regressions for accessibility
 
 ```` {r linear regression}
-# protected areas
+# accessibility
 
 accesslm <- glm(survival~access_standard, data=access_surv_ID, family="binomial")
 
@@ -279,4 +303,267 @@ print(hfplm4)
 
 summary(hfplm4)
 ````
+
+
+``` {r simple models}
+
+lmforloss<- glm(survival~forloss_standard,data=all_var, family="binomial")
+
+lmpas <- glm(survival~wdpa_standard,data=all_var, family="binomial")
+
+lmaccess <-glm(survival~access_standard,data=all_var, family="binomial")
+
+lmhfp <- glm(survival~hfp_standard,data=all_var, family="binomial")
+
+forloss_pas <- glm(survival~forloss_standard+wdpa_standard, data = all_var, family="binomial")
+
+summary(forloss_pas)
+
+forloss_access <- glm(survival~forloss_standard+access_standard, data = all_var, family="binomial")
+
+forloss_hfp <-  glm(survival~forloss_standard+hfp_standard, data = all_var, family="binomial")  
+
+forloss_pas_access <- glm(survival~forloss_standard+wdpa_standard+access_standard, data = all_var, family="binomial")
+
+forloss_pas_hfp <- glm(survival~forloss_standard+wdpa_standard+hfp_standard, data = all_var, family="binomial")
+
+models <- list(lmforloss,lmpas,lmaccess,lmhfp, forloss_pas,forloss_access,forloss_hfp, forloss_pas_access, forloss_pas_hfp)
+
+model.names <- c('lmforloss','lmpas','lmaccess','lmhfp','forloss_pas','forloss_access','forloss_hfp','forloss_pas_access','forloss_pas_hfp')
+
+aictab(cand.set = models, modnames = model.names)
+
+````
+
+``` {r general linear mixed effect models}
+
+# One predictor and random effect of country
+forloss_country <- glmer(survival~forloss_standard+(1|country), data=all_var, family="binomial")
+
+plot(forloss_country)
+shapiro.test(resid(forloss_country))
+
+pas_country <- glmer(survival~wdpa_standard+(1|country), data=all_var, family="binomial")
+
+access_country <- glmer(survival~ access_standard+(1|country), data=all_var, family="binomial")
+
+hfp_country <- glmer(survival~ hfp_standard+(1|country), data=all_var, family="binomial")
+
+plot(hfp_country)
+
+shapiro.test(resid(hfp_country))
+
+ranef(hfp_country)
+
+plot(resid(hfp_country),all_var$survival)
+
+plot(residuals(hfp_country)~fitted(hfp_country), main="resid vs fitted")
+qqnorm(residuals(hfp_country))
+
+boxplot(hfp_country$residuals, main="Residual Box Plot")
+
+require("lattice")
+qqmath(hfp_country, id=0.05)
+
+dotplot(ranef(hfp_country, condVar = TRUE))
+
+# Two predictors and random effect of country
+
+forloss_hfp_country <- glmer(survival~forloss_standard+(1|country)+hfp_standard, data=all_var, family="binomial")
+
+forloss_access_country <- glmer(survival~forloss_standard+(1|country)+access_standard, data=all_var, family="binomial")
+
+forloss_pas_country <- glmer(survival~forloss_standard+(1|country)+wdpa_standard, data=all_var, family="binomial")
+
+hfp_access_country <- glmer(survival~hfp_standard+(1|country)+access_standard, data= all_var, family = "binomial")
+
+hfp_pas_country <- glmer(survival~hfp_standard+(1|country)+wdpa_standard, data=all_var, family="binomial")
+
+access_pas_country <- glmer(survival~access_standard+(1|country)+wdpa_standard, data=all_var, family="binomial")
+
+# 3 predictors & country as random effect
+
+forloss_hfp_access <- glmer(survival~forloss_standard+(1|country)+hfp_standard+access_standard, data=all_var, family="binomial")
+
+forloss_hfp_pas <- glmer(survival~forloss_standard+(1|country)+hfp_standard+wdpa_standard, data=all_var, family="binomial")
+
+forloss_pas_access <- glmer(survival~forloss_standard+(1|country)+wdpa_standard+access_standard, data=all_var, family="binomial")
+
+hfp_access_pas <- glmer(survival~hfp_standard+(1|country)+access_standard+wdpa_standard, data=all_var, family="binomial")
+
+# 4 predictors & country as random effect
+
+all_pred <- glmer(survival~forloss_standard+(1|country)+wdpa_standard+access_standard+hfp_standard, data=all_var, family="binomial")
+
+mixed_models<- list(forloss_country,pas_country, access_country, hfp_country, forloss_hfp_country, forloss_access_country, forloss_pas_country, hfp_access_country, hfp_pas_country, access_pas_country, forloss_hfp_access, forloss_hfp_pas, forloss_pas_access, hfp_access_pas,all_pred)
+
+mixed_model_names <- c('forloss_country', 'pas_country', 'access_country', 'hfp_country', 'forloss_hfp_country','forloss_access_country','forloss_pas_country','hfp_access_country', 'hfp_pas_country','access_pas_country', 'forloss_hfp_access','forloss_hfp_pas', 'forloss_pas_access','hfp_access_pas', 'all_pred')
+
+aictable <- aictab(cand.set = mixed_models, modnames= mixed_model_names)
+
+dfaic <- as.data.frame(aictable)
+
+write.csv(dfaic,data.output,row.names = FALSE)
+
+bictab(cand.set=mixed_models, modnames=mixed_model_names)
+
+
+forloss_pas_country_interaction <- glmer(survival~forloss_standard+(1|country)+wdpa_standard+forloss_standard*wdpa_standard, data=all_var, family="binomial")
+
+summary(forloss_pas_country_interaction)
+
+hfp_pas_country_interaction <- glmer(survival~hfp_standard+(1|country)+wdpa_standard+hfp_standard*wdpa_standard, data=all_var, family="binomial")
+
+summary(hfp_pas_country_interaction)
+
+# Have a closer look at the best models
+
+summary(hfp_pas_country) # not significant
+
+summary(access_country) # not significant
+
+summary(pas_country) # not significant
+
+summary(hfp_country) # significant & best model
+
+summary(forloss_hfp_pas) # not significant
+
+summary(hfp_access_country) # not significant
+
+summary(forloss_country) # not significant
+
+
+
+```
+
+
+```` {r plot best model}
+ 
+plot(hfp_country, survival~fitted(.)| country, abline = c(0,1), cex=0.5)
+
+ggsave(here::here("plots", "fits_13012022"), 
+       width = 9, height = 5, dpi = 500)
+
+plot(hfp_country)
+
+plot(hfp_country, survival~resid(.))
+
+
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+
+sjPlot::plot_model(hfp_country)
+
+hfp_tab <- sjPlot::tab_model(hfp_country, CSS = list(css.table ='font-family: Calibri;'), show.re.var = TRUE, pred.labels = c(("(Intercept)"),"Human footprint"), dv.labels="Effect of Human Footprint on Survival Rate", file = "Survival_Table.html")
+
+write.table(hfp_tab, "hfp_surv_table.txt", sep=",", quote = FALSE, row.names = F)
+
+
+install.packages("webshot")
+library("webshot")
+webshot("Survival_Table.html","Survival_Table.png")
+
+library("effects")
+
+effects_country <- effects::effect(term = "hfp_standard", mod=hfp_country)
+summary(effects_country)
+
+
+x_country <- as.data.frame(effects_country)
+
+## Current plot in use in the thesis doc
+
+ggplot() + geom_point(data=all_var, aes(hfp_standard, survival, colour=country)) + geom_point(data=x_country, aes(x=hfp_standard, y=fit), colour="black")+ geom_line(data=x_country, aes(x=hfp_standard, y=fit), colour="black")+ geom_ribbon(data=x_country, aes(x=hfp_standard, ymin=lower, ymax=upper), alpha=0.2, fill="grey")+ theme_classic() + theme(legend.position = "right") + labs(title= "Effect of Human Footprint on Survival Rate", xlab=" Human Footprint", ylab= "Survival Rate" )
+
+ggsave(here::here("plots", "surv_hfp_20012023.png"), width = 9, height = 5, dpi = 500, bg="white")
+
+plot<- ggplot() + geom_point(data=all_var, aes(hfp_standard, survival)) +geom_point(data=x_country, aes(x=hfp_standard, y=fit), colour="blue")+ geom_line(data=x_country, aes(x=hfp_standard, y=fit), colour="blue")+ geom_ribbon(data=x_country, aes(x=hfp_standard, ymin=lower, ymax=upper), alpha=0.2, fill="blue")+ labs(x="Human Footprint", y="Survival")
+
+plot +
+  geom_point(data=all_var, aes(x=hfp_standard, y=survival, colour = country))  +      
+   scale_colour_discrete(name = "country") + 
+   guides(fill="none")
+
+ggplot(all_var, aes(hfp_standard, survival) +
+         geom_point()+
+         facet_wrap(~country,ncol=2)+
+         labs(title = "Effect of Human Footprint", x="Human Footprint", y="Survival Rate")
+       
+# Plot with country colours       
+       colour_plot <- ggplot(all_var, aes(x = hfp_standard, y = survival, colour = country)) +
+  geom_point(size = 2) +
+  theme_classic() +
+  theme(legend.position = "right") +
+         labs(title= "Effect of Human Footprint on Survival Rate", xlab=" Human Footprint", ylab= "Survival Rate" )
+
+ggsave(here::here("plots", "Surv_count_hfp.png"), width = 9, height = 5, dpi = 500, bg="white")       
+
+       
+qqnorm(resid(hfp_country))+ qqline(resid(hfp_country))
+savePlot(filename = QQPlot_surv_model, type="png", device = dev.cur(), restoreConsole = FALSE)
+
+
+mm_plot <- ggplot(all_var, aes(x = hfp_standard, y = survival, colour = country)) +
+      facet_wrap(~country, nrow=2) +   # a panel for each mountain range
+      geom_point(alpha = 0.5) +
+      theme_classic() +
+      geom_line(data = cbind(all_var, pred = predict(hfp_country)), aes(y = pred), linewidth = 1) +  # adding predicted line from mixed model 
+      theme(legend.position = "none",
+            panel.spacing = unit(2, "lines"))  # adding space between panels
+
+mm_plot
+       
+````
+
+```` {r try with re-scaled data}
+
+
+# One predictor and random effect of country
+aforloss_country <- glmer(survival~forloss_standard+(1|country), data=all_var2, family="binomial")
+
+apas_country <- glmer(survival~wdpa_standard+(1|country), data=all_var2, family="binomial")
+
+aaccess_country <- glmer(survival~ access_standard+(1|country), data=all_var2, family="binomial")
+
+ahfp_country <- glmer(survival~ hfp_standard+(1|country), data=all_var2, family="binomial")
+
+# Two predictors and random effect of country
+
+aforloss_hfp_country <- glmer(survival~forloss_standard+(1|country)+hfp_standard, data=all_var2, family="binomial")
+
+aforloss_access_country <- glmer(survival~forloss_standard+(1|country)+access_standard, data=all_var2, family="binomial")
+
+aforloss_pas_country <- glmer(survival~forloss_standard+(1|country)+wdpa_standard, data=all_var2, family="binomial")
+
+ahfp_access_country <- glmer(survival~hfp_standard+(1|country)+access_standard, data= all_var2, family = "binomial")
+
+ahfp_pas_country <- glmer(survival~hfp_standard+(1|country)+wdpa_standard, data=all_var2, family="binomial")
+
+aaccess_pas_country <- glmer(survival~access_standard+(1|country)+wdpa_standard, data=all_var2, family="binomial")
+
+# 3 predictors & country as random effect
+
+aforloss_hfp_access <- glmer(survival~forloss_standard+(1|country)+hfp_standard+access_standard, data=all_var2, family="binomial")
+
+aforloss_hfp_pas <- glmer(survival~forloss_standard+(1|country)+hfp_standard+wdpa_standard, data=all_var2, family="binomial")
+
+aforloss_pas_access <- glmer(survival~forloss_standard+(1|country)+wdpa_standard+access_standard, data=all_var2, family="binomial")
+
+ahfp_access_pas <- glmer(survival~hfp_standard+(1|country)+access_standard+wdpa_standard, data=all_var2, family="binomial")
+
+# 4 predictors & country as random effect
+
+aall_pred <- glmer(survival~forloss_standard+(1|country)+wdpa_standard+access_standard+hfp_standard, data=all_var2, family="binomial")
+
+amixed_models<- list(aforloss_country,apas_country, aaccess_country, ahfp_country, aforloss_hfp_country, aforloss_access_country, aforloss_pas_country, ahfp_access_country, ahfp_pas_country, aaccess_pas_country, aforloss_hfp_access, aforloss_hfp_pas, aforloss_pas_access, ahfp_access_pas,aall_pred)
+
+amixed_model_names <- c('aforloss_country', 'apas_country', 'aaccess_country', 'ahfp_country', 'aforloss_hfp_country','aforloss_access_country','aforloss_pas_country','ahfp_access_country', 'ahfp_pas_country','aaccess_pas_country', 'aforloss_hfp_access','aforloss_hfp_pas', 'aforloss_pas_access','ahfp_access_pas', 'aall_pred')
+
+aictable <- aictab(cand.set = amixed_models, modnames= amixed_model_names)
+
+ggplot() + geom_point(data=all_var2, aes(hfp_standard, survival)) + geom_point(data=x_country, aes(x=hfp_standard, y=fit), colour="blue")+ geom_line(data=x_country, aes(x=hfp_standard, y=fit), colour="blue")+ geom_ribbon(data=x_country, aes(x=hfp_standard, ymin=lower, ymax=upper), alpha=0.3, fill="blue")+ labs(x="Human Footprint", y="Survival")
+
+````
+
 
