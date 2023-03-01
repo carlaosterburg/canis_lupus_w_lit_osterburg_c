@@ -1,0 +1,207 @@
+---
+title: "Wolf MVP-PVA: Literature Review Maps"
+description: ""
+author:
+    - name: "Cédric Scherer"
+      url: https://cedricscherer.com
+      affiliation: Leibniz Institute for Zoo and Wildlife Research
+      affiliation_url: https://izw-berlin.de/en/
+      orcid_id: 0000-0003-0465-2543
+    - name: "Carla Osterburg"
+      url:
+      affiliation: Leibniz Institute for Zoo and Wildlife Research
+      affiliation_url: https://izw-berlin.de/en/
+    - name: "Julie Louvrier"
+      url:
+      affiliation: Leibniz Institute for Zoo and Wildlife Research
+      affiliation_url: https://izw-berlin.de/en/
+date: "`r Sys.Date()`"
+output:
+    distill::distill_article:
+        highlight: kate
+        code_folding: true
+        toc: true
+        toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 9, fig.height = 5, dpi = 500,
+                      retina = 1, fig.showtext = TRUE, layout = "l-page")
+```
+
+```{r packages}
+
+rm(list=ls())
+library(tidyverse)
+library(sf)
+library(rnaturalearth)
+library(rmapshaper)
+library(scico)
+library(here)
+
+theme_set(theme_void(base_family = "TrebuchetMS", base_size = 11))
+theme_update(
+  legend.position = "top",
+  legend.spacing = unit(2, "lines"),
+  legend.title = element_text(face = "bold")
+)
+```
+
+
+# Data
+
+```{r data}
+## rectangular data of coordinates and counts per country
+df_coords <- read_csv2(here::here("data-raw", "geo-raw", "study_coords_28_02_2023.csv"))
+
+df_coords2 <- df_coords %>% 
+  na.omit()
+
+summary(df_coords2)
+
+
+## data for world map
+sf_countries <- 
+  ne_download(scale = 50, returnclass = "sf") %>% 
+  st_transform(crs = "+proj=moll +R=10567000 +lon_0=0 +x_0=0 +y_0=0 +units=m +towgs84=0,0,0,0,0,0,0 +no_defs")
+
+sf_borders <- rmapshaper::ms_innerlines(sf_countries)
+
+sf_oceans <- 
+  ne_download(category = "physical", type = "ocean", scale = 50, returnclass = "sf") %>% 
+  st_transform(crs = st_crs(sf_countries))
+
+sf_graticules <- 
+  ne_download(category = "physical", type = "graticules_30", scale = 50, returnclass = "sf") %>% 
+  st_transform(crs = st_crs(sf_countries))
+
+## turn review locations into spatial objects
+sf_coords <- 
+  df_coords2 %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  st_transform(crs = st_crs(sf_countries))
+
+```
+
+# Maps
+
+## Locations
+
+```{r location-map}
+base_map <- 
+  ggplot() + 
+  geom_sf(data = sf_oceans, fill = "#d8e5f0", color = "#d8e5f0", size = .15) +
+  geom_sf(data = sf_countries, fill = "#ded6c2", color = "#ded6c2", size = .15) +
+  geom_sf(data = sf_graticules, color = "white", size = .1) +
+  geom_sf(data = sf_countries, fill = "#ded6c2", color = "transparent", size = .01) +
+  geom_sf(data = sf_borders, color = "#e5ddc6", size = .15) 
+  
+world_map <-base_map + 
+  geom_sf(
+    data = sf_coords, aes(shape = exact_location), 
+    size = 1.3, color = "white"
+  ) +
+  geom_sf(
+    data = sf_coords, aes(shape = exact_location, fill = year_pub), 
+    size = 1.1, stroke = .3
+  ) +
+  scale_fill_viridis_c(
+    option = "A", direction = -1, end = .9, name = "Year of Publication", 
+    guide = guide_colorsteps(
+      barwidth = unit(11, "lines"), barheight = unit(.5, "lines"),
+      title.position = "top", order = 1, show.limits = TRUE
+    )
+  ) +
+  scale_shape_manual(
+    values = c(21, 23), name = "Exact Location?", labels = c("No", "Yes"),
+    guide = guide_legend(title.position = "top", order = 2,
+                         override.aes = list(fill = "#289689", size = 4))
+  ) 
+
+world_map
+
+ggsave(here::here("plots", "map_coords_year_h_transp_28022023.png"), 
+       width = 9, height = 5, dpi = 500)
+
+ggsave(here::here("plots", "map_coords_year_h_white_28022023.png"), 
+       width = 9, height = 5, dpi = 500, bg = "white")
+```
+
+```{r location-map-zoom, fig.width = 4.5}
+zoom_map <- 
+  base_map + 
+  geom_sf(
+    data = sf_coords, aes(shape = exact_location, color = year_pub), 
+    size =1.5, stroke = .8
+  ) +
+  scale_color_viridis_c(
+    option = "C", direction = -1, end = .9, name = "Year of Publication", 
+    guide = guide_colorsteps(
+      barwidth = unit(11, "lines"), barheight = unit(.5, "lines"),
+      title.position = "top", order = 1, show.limits = TRUE
+    )
+  ) +
+  scale_shape_manual(
+    values = c(21, 23), name = "Exact Location?", labels = c("No", "Yes"),
+    guide = guide_legend(title.position = "top", order = 2,
+                         override.aes = list(size = 4))
+  ) 
+
+## North America
+zoom_map + 
+  coord_sf(xlim = c(-18500000, -9000000), ylim = c(3500000, 13000000))
+
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_NA_transp_c_20012023.png"), 
+       width = 4.5, height = 5, dpi = 500)
+
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_NA_white_c_20012023.png"), 
+       width = 4.5, height = 5, dpi = 500, bg = "white")
+
+## Europe
+zoom_map + 
+  coord_sf(xlim = c(-1200000, 5500000), ylim = c(5500000, 13000000))
+
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_EUR_transp_c_28022023.png"), 
+       width = 4.5, height = 5, dpi = 500)
+
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_EUR_white_c_28022023.png"), 
+       width = 4.5, height = 5, dpi = 500, bg = "white")
+```
+``` {r location-map}
+
+base_map <- 
+  ggplot() + 
+  geom_sf(data = sf_oceans, fill = "#d8e5f0", color = "#d8e5f0", size = .15) +
+  geom_sf(data = sf_countries, fill = "#ded6c2", color = "#ded6c2", size = .15) +
+  geom_sf(data = sf_graticules, color = "white", size = .1) +
+  geom_sf(data = sf_countries, fill = "#ded6c2", color = "transparent", size = .01) +
+  geom_sf(data = sf_borders, color = "#e5ddc6", size = .15) 
+  
+trial <-base_map + 
+  geom_sf(
+    data = sf_coords, aes(shape = exact_location), 
+    size = 1.3, color = "white"
+  ) +
+  geom_sf(
+    data = sf_coords, aes(shape = exact_location, fill = year_pub), 
+    size = 1.1, stroke = .3
+  ) +
+  scale_fill_viridis_c(
+    option = "H", direction = -1, end = .9, name = "Year of Publication", 
+    guide = guide_colorsteps(
+      barwidth = unit(11, "lines"), barheight = unit(.5, "lines"),
+      title.position = "top", order = 1, show.limits = TRUE
+    )
+  ) +
+  scale_shape_manual(
+    values = c(21, 23), name = "Exact Location?", labels = c("No", "Yes"),
+    guide = guide_legend(title.position = "top", order = 2,
+                         override.aes = list(fill = "#289689", size = 4))
+  ) 
+
+
+trial
+
+
+``` 

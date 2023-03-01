@@ -1,0 +1,146 @@
+---
+title: "Wolf MVP-PVA: Literature Review Maps"
+description: ""
+author:
+    - name: "Cédric Scherer"
+      url: https://cedricscherer.com
+      affiliation: Leibniz Institute for Zoo and Wildlife Research
+      affiliation_url: https://izw-berlin.de/en/
+      orcid_id: 0000-0003-0465-2543
+    - name: "Carla Osterburg"
+      url:
+      affiliation: Leibniz Institute for Zoo and Wildlife Research
+      affiliation_url: https://izw-berlin.de/en/
+    - name: "Julie Louvrier"
+      url:
+      affiliation: Leibniz Institute for Zoo and Wildlife Research
+      affiliation_url: https://izw-berlin.de/en/
+date: "`r Sys.Date()`"
+output:
+    distill::distill_article:
+        highlight: kate
+        code_folding: true
+        toc: true
+        toc_depth: 2
+---
+
+## Basic setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 9, fig.height = 5, dpi = 500,
+                      retina = 1, fig.showtext = TRUE, layout = "l-page")
+```
+
+## Packages required 
+
+```{r packages}
+rm(list=ls())
+
+library(tidyverse)
+library(sf)
+library(rnaturalearth)
+library(rmapshaper)
+library(scico)
+library(here)
+library(viridis)
+
+theme_set(theme_void(base_family = "TrebuchetMS", base_size = 11))
+theme_update(
+  legend.position = "top",
+  legend.spacing = unit(2, "lines"),
+  legend.title = element_text(face = "bold")
+)
+```
+
+# Data
+
+```{r data}
+## rectangular data of counts per country
+df_counts <- read_csv2(here::here("data-raw", "geo-raw", "country_counts_20012023.csv"))
+
+## data for world map
+sf_countries <- 
+  ne_download(scale = 50, returnclass = "sf") %>% 
+  st_transform(crs = "+proj=moll +R=10567000 +lon_0=0 +x_0=0 +y_0=0 +units=m +towgs84=0,0,0,0,0,0,0 +no_defs")
+
+sf_borders <- rmapshaper::ms_innerlines(sf_countries)
+
+sf_oceans <- 
+  ne_download(category = "physical", type = "ocean", scale = 50, returnclass = "sf") %>% 
+  st_transform(crs = st_crs(sf_countries))
+
+sf_graticules <- 
+  ne_download(category = "physical", type = "graticules_30", scale = 50, returnclass = "sf") %>% 
+  st_transform(crs = st_crs(sf_countries))
+
+## merge counts with world map
+sf_counts <- 
+  sf_countries %>% 
+  dplyr::select("ADM0_A3") %>% 
+  left_join(df_counts, by = c("ADM0_A3" = "country_code"))
+```
+
+## Counts per Country
+
+```{r counts-map}
+ggplot() + 
+  geom_sf(data = sf_oceans, fill = "#d8e5f0", color = "#d8e5f0", size = .15) +
+  geom_sf(data = sf_countries, fill = "grey92", color = "grey92", size = .15) +
+  geom_sf(data = sf_graticules, color = "white", size = .1) +
+  geom_sf(data = sf_counts, aes(fill = country_count), color = "transparent", size = .01) +
+  geom_sf(data = sf_borders, color = "grey92", size = .15) +
+  scico::scale_fill_scico(
+    palette = "bamako", direction = -1, end = .9, name = "Number of Publications", 
+    breaks = seq(3, 18, by = 3), na.value = "grey92",
+    guide = guide_colorsteps(
+      barwidth = unit(11, "lines"), barheight = unit(.5, "lines"),
+      title.position = "top", order = 1, show.limits = TRUE
+    )
+  ) 
+
+ggsave(here::here("plots", "map_wolf_review_country_counts_trans_20012023.png"), 
+       width = 9, height = 5, dpi = 500)
+
+ggsave(here::here("plots", "map_wolf_review_country_counts_white_20012023.png"), 
+       width = 9, height = 5, dpi = 500, bg = "white")
+```  
+## Try out colours 
+
+```{r counts-map}
+ggplot() + 
+  geom_sf(data = sf_oceans, fill = "#d8e5f0", color = "#d8e5f0", size = .15) +
+  geom_sf(data = sf_countries, fill = "grey92", color = "grey92", size = .15) +
+  geom_sf(data = sf_graticules, color = "white", size = .1) +
+  geom_sf(data = sf_counts, aes(fill = country_count), color = "transparent", size = .01) +
+  geom_sf(data = sf_borders, color = "grey92", size = .15) +
+  scico::scale_fill_scico(
+    palette = "batlow", direction = -1, end = .9, name = "Number of Publications", 
+    breaks = seq(3, 18, by = 3), na.value = "grey92",
+    guide = guide_colorsteps(
+      barwidth = unit(11, "lines"), barheight = unit(.5, "lines"),
+      title.position = "top", order = 1, show.limits = TRUE
+    )
+  ) 
+
+``` 
+
+## Try out viridis 
+
+```{r counts-map}
+ggplot() + 
+  geom_sf(data = sf_oceans, fill = "#d8e5f0", color = "#d8e5f0", size = .15) +
+  geom_sf(data = sf_countries, fill = "grey92", color = "grey92", size = .15) +
+  geom_sf(data = sf_graticules, color = "white", size = .1) +
+  geom_sf(data = sf_counts, aes(fill = country_count), color = "transparent", size = .01) +
+  geom_sf(data = sf_borders, color = "grey92", size = .15) +
+  scale_fill_gradientn(colours = viridis(256,option = "D", alpha = 1, direction = -1, begin = 0, end = .9), limits=c(1,35),breaks=seq(3,30, by=3), name="Number of Publications", space = "Lab", na.value = "grey92", guide= guide_colorsteps(barwidth=unit(11,"lines"), barheight = unit(.5,"lines"), title.position ="top", order=1, show.limits = TRUE))
+
+ggsave(here::here("plots", "map_country_counts_viridis_d_trans_20012023", Sys.Date(),".png"), 
+       width = 9, height = 5, dpi = 500)
+
+ggsave(here::here("plots", "map_country_counts_viridis_d_white_20012023.png"), 
+       width = 9, height = 5, dpi = 500, bg = "white")
+
+``` 
+

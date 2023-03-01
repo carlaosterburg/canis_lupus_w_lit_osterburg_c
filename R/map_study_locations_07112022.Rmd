@@ -32,18 +32,13 @@ theme_update(
 # Data
 
 ```{r data}
-## rectangular dsata of coordinates and coutns per country
-df_coords <- read_csv2(here::here("data-raw", "geo-raw", "study_coords_20_12_2022.csv"))
+## rectangular data of coordinates and counts per country
+df_coords <- read_csv2(here::here("data-raw", "geo-raw", "study_coords_20_01_2023.csv"))
 
-df_coords2 <- df_coords %>% na.omit()
+df_coords2 <- df_coords %>% 
+  na.omit()
 
-newdf <- df_coords$study_area_size
-
-nonanewdf<- na.omit(newdf)
-
-summary(nonanewdf)
-
-view(nonanewdf)
+summary(df_coords2)
 
 
 ## data for world map
@@ -92,7 +87,7 @@ world_map <-base_map +
     size = 1.1, stroke = .3
   ) +
   scale_fill_viridis_c(
-    option = "D", direction = -1, end = .9, name = "Year of Publication", 
+    option = "A", direction = -1, end = .9, name = "Year of Publication", 
     guide = guide_colorsteps(
       barwidth = unit(11, "lines"), barheight = unit(.5, "lines"),
       title.position = "top", order = 1, show.limits = TRUE
@@ -117,18 +112,18 @@ ggsave(here::here("plots", "map_coords_year_h_white.png"),
 zoom_map <- 
   base_map + 
   geom_sf(
-    data = sf_coords, aes(shape = exact_loc, color = year_pub), 
-    size = 1.3, stroke = .8
+    data = sf_coords, aes(shape = exact_location, color = year_pub), 
+    size =1.5, stroke = .8
   ) +
   scale_color_viridis_c(
-    option = "D", direction = -1, end = .9, name = "Year of Publication", 
+    option = "C", direction = -1, end = .9, name = "Year of Publication", 
     guide = guide_colorsteps(
       barwidth = unit(11, "lines"), barheight = unit(.5, "lines"),
-      title.position = "top", order = 1, show.limits = TRUE
+      title.position = "top", order = 1, show.limits = TRUEs
     )
   ) +
   scale_shape_manual(
-    values = c(1, 5), name = "Exact Location?", labels = c("No", "Yes"),
+    values = c(21, 23), name = "Exact Location?", labels = c("No", "Yes"),
     guide = guide_legend(title.position = "top", order = 2,
                          override.aes = list(size = 4))
   ) 
@@ -137,20 +132,20 @@ zoom_map <-
 zoom_map + 
   coord_sf(xlim = c(-18500000, -9000000), ylim = c(3500000, 13000000))
 
-ggsave(here::here("plots", "map_wolf_review_coordinates_year_america_transp_d.png"), 
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_NA_transp_c_20012023.png"), 
        width = 4.5, height = 5, dpi = 500)
 
-ggsave(here::here("plots", "map_wolf_review_coordinates_year_america_white_d.png"), 
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_NA_white_c_20012023.png"), 
        width = 4.5, height = 5, dpi = 500, bg = "white")
 
 ## Europe
 zoom_map + 
   coord_sf(xlim = c(-1200000, 5500000), ylim = c(5500000, 13000000))
 
-ggsave(here::here("plots", "map_wolf_review_coordinates_year_europe_transp_d.png"), 
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_EUR_transp_c_20012023.png"), 
        width = 4.5, height = 5, dpi = 500)
 
-ggsave(here::here("plots", "map_wolf_review_coordinates_year_europe_white_d.png"), 
+ggsave(here::here("plots", "map_wolf_review_coordinates_year_EUR_white_c_20012023.png"), 
        width = 4.5, height = 5, dpi = 500, bg = "white")
 ```
 ``` {r location-map}
@@ -163,13 +158,13 @@ base_map <-
   geom_sf(data = sf_countries, fill = "#ded6c2", color = "transparent", size = .01) +
   geom_sf(data = sf_borders, color = "#e5ddc6", size = .15) 
   
-world_map <-base_map + 
+trial <-base_map + 
   geom_sf(
-    data = sf_coords, aes(shape = exact_loc), 
+    data = sf_coords, aes(shape = exact_location), 
     size = 1.3, color = "white"
   ) +
   geom_sf(
-    data = sf_coords, aes(shape = exact_loc, fill = year_pub), 
+    data = sf_coords, aes(shape = exact_location, fill = year_pub), 
     size = 1.1, stroke = .3
   ) +
   scale_fill_viridis_c(
@@ -186,6 +181,7 @@ world_map <-base_map +
   ) 
 
 
+trial
 
 
 ``` 
